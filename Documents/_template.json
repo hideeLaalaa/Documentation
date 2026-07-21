@@ -1,0 +1,24 @@
+{
+  "number": "SA-000",
+  "title": "Document Title",
+  "version": "1.0",
+  "category": "Legal",
+  "owner": "Spotlight Advocate",
+  "approved": "Pending",
+  "purpose": "One or two sentences explaining why this document exists.",
+  "scope": "Who and what this document applies to.",
+  "sections": [
+    {
+      "heading": "Section Heading",
+      "body": "Section body text. Keep each section focused on one idea."
+    }
+  ],
+  "revision_history": [
+    {
+      "version": "1.0",
+      "date": "2026-07-21",
+      "author": "Spotlight Advocate",
+      "notes": "Initial draft."
+    }
+  ]
+}

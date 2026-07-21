@@ -1,0 +1,40 @@
+{
+  "number": "SA-100",
+  "title": "Business Location & Production Release",
+  "version": "1.0",
+  "category": "Legal",
+  "owner": "Spotlight Advocate",
+  "approved": "Pending",
+  "purpose": "To authorize Spotlight Advocate to access, photograph, film, and use designated business premises for production purposes under agreed terms.",
+  "scope": "Applies to any business location where Spotlight Advocate conducts photography, video, or related production activities with the property owner's consent.",
+  "sections": [
+    {
+      "heading": "Grant of Access",
+      "body": "The Property Owner grants Spotlight Advocate and its authorized personnel reasonable access to the designated premises for the purpose of producing photographic and audiovisual content. Access is limited to the areas and times agreed in writing or as otherwise coordinated between the parties."
+    },
+    {
+      "heading": "Photography & Recording",
+      "body": "Spotlight Advocate may photograph, film, and record audio and video on the premises. The Property Owner acknowledges that such materials may include depictions of the location, signage, products, and atmosphere of the business."
+    },
+    {
+      "heading": "Use of Materials",
+      "body": "Spotlight Advocate may use, edit, publish, distribute, and license the materials for promotional, editorial, commercial, and archival purposes, including but not limited to websites, social media, advertising, and licensing programs, unless otherwise restricted in a separate written agreement."
+    },
+    {
+      "heading": "Property Owner Representations",
+      "body": "The Property Owner represents that they have authority to grant the rights described in this document and that use of the premises for production does not violate any lease, association rule, or third-party agreement known to the Property Owner."
+    },
+    {
+      "heading": "Release & Acknowledgement",
+      "body": "The Property Owner releases Spotlight Advocate from claims arising from authorized production activities conducted in accordance with this document, except to the extent caused by Spotlight Advocate's gross negligence or willful misconduct."
+    }
+  ],
+  "revision_history": [
+    {
+      "version": "1.0",
+      "date": "2026-07-21",
+      "author": "Spotlight Advocate",
+      "notes": "Initial framework draft for SADS."
+    }
+  ]
+}

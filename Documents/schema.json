@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spotlightadvocate.local/schemas/document.json",
+  "title": "Spotlight Advocate Document",
+  "description": "Phase 3 content source for SADS. Formatting never lives here — only structured content.",
+  "type": "object",
+  "required": [
+    "number",
+    "title",
+    "version",
+    "category",
+    "owner",
+    "approved",
+    "purpose",
+    "scope",
+    "sections",
+    "revision_history"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "number": {
+      "type": "string",
+      "pattern": "^SA-[0-9]{3,}$",
+      "description": "Document number, e.g. SA-100"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1,
+      "examples": ["1.0", "1.1"]
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "Corporate",
+        "Legal",
+        "Operations",
+        "Sales",
+        "Production",
+        "HR",
+        "Licensing"
+      ]
+    },
+    "owner": {
+      "type": "string",
+      "minLength": 1
+    },
+    "approved": {
+      "type": "string",
+      "minLength": 1,
+      "examples": ["Pending", "Approved", "Draft"]
+    },
+    "purpose": {
+      "type": "string"
+    },
+    "scope": {
+      "type": "string"
+    },
+    "sections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["heading", "body"],
+        "additionalProperties": false,
+        "properties": {
+          "heading": { "type": "string" },
+          "body": { "type": "string" }
+        }
+      }
+    },
+    "revision_history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["version", "date", "author", "notes"],
+        "additionalProperties": false,
+        "properties": {
+          "version": { "type": "string" },
+          "date": {
+            "type": "string",
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+          },
+          "author": { "type": "string" },
+          "notes": { "type": "string" }
+        }
+      }
+    }
+  }
+}

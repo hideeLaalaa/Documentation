@@ -1,0 +1,28 @@
+{
+  "number": "SA-102",
+  "title": "Talent Appearance Release",
+  "version": "1.0",
+  "category": "Legal",
+  "owner": "Spotlight Advocate",
+  "approved": "Pending",
+  "purpose": "Authorize Spotlight Advocate to record and use a talent's likeness.",
+  "scope": "Applies to individuals appearing on camera in Spotlight Advocate productions.",
+  "sections": [
+    {
+      "heading": "Consent",
+      "body": "Talent consents to being photographed and recorded."
+    },
+    {
+      "heading": "Use",
+      "body": "Materials may be used for promotional and commercial purposes."
+    }
+  ],
+  "revision_history": [
+    {
+      "version": "1.0",
+      "date": "2026-07-21",
+      "author": "Spotlight Advocate",
+      "notes": "Initial draft."
+    }
+  ]
+}

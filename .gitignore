@@ -1,0 +1,16 @@
+# Spotlight Advocate Documentation System
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.DS_Store
+
+# Generated outputs (rebuild anytime from JSON + template)
+Output/DOCX/*.docx
+Output/PDF/*.pdf
+Output/Archive/*
+!Output/**/.gitkeep
+
+# Keep gold master + working twin tracked
+# Template/*.dotx and Template/*.docx are versioned on purpose

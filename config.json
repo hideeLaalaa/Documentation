@@ -1,0 +1,32 @@
+{
+  "project": "Spotlight Advocate Documentation System",
+  "short_name": "SADS",
+  "owner": "Spotlight Advocate",
+  "paths": {
+    "template": "Template/SpotlightAdvocate.dotx",
+    "template_fallback": "Template/SpotlightAdvocate.docx",
+    "documents": "Documents",
+    "index": "index.json",
+    "output_docx": "Output/DOCX",
+    "output_pdf": "Output/PDF",
+    "archive": "Output/Archive",
+    "images": "Output/Images"
+  },
+  "placeholders": {
+    "number": "{{NUMBER}}",
+    "title": "{{TITLE}}",
+    "body": "{{BODY}}",
+    "purpose": "{{PURPOSE}}",
+    "scope": "{{SCOPE}}",
+    "version": "{{VERSION}}",
+    "category": "{{CATEGORY}}",
+    "owner": "{{OWNER}}",
+    "approved": "{{APPROVED}}",
+    "revision_history": "{{REVISION_HISTORY}}",
+    "document_info": "{{DOCUMENT_INFO}}"
+  },
+  "pdf": {
+    "enabled": true,
+    "method": "auto"
+  }
+}
