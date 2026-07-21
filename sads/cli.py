@@ -21,9 +21,9 @@ from sads.library import (
     update_metadata,
     validate_library,
 )
+from sads.paths import resolve, template_path
 from sads.rebuild import rebuild_index, rebuild_library
 from sads.template import build_master_template, docx_to_dotx, validate_template
-from sads.paths import resolve, template_path
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -135,6 +135,10 @@ def main(argv: list[str] | None = None) -> int:
         "status",
         help="Show system status (template, library, PDF backends)",
     )
+
+    serve = sub.add_parser("serve", help="Start the web UI API server")
+    serve.add_argument("--host", default="127.0.0.1")
+    serve.add_argument("--port", type=int, default=8765)
 
     args = parser.parse_args(argv)
 
@@ -360,6 +364,25 @@ def main(argv: list[str] | None = None) -> int:
             print("  PDF backends: none")
             print("    Install free LibreOffice for PDF export:")
             print("    brew install --cask libreoffice")
+        return 0
+
+    if args.command == "serve":
+        try:
+            import uvicorn
+        except ImportError:
+            print(
+                "Error: install API deps with: pip install fastapi 'uvicorn[standard]'",
+                file=sys.stderr,
+            )
+            return 1
+        print(f"SADS API  →  http://{args.host}:{args.port}")
+        print(f"Web UI    →  http://127.0.0.1:5173  (run: cd web && npm run dev)")
+        uvicorn.run(
+            "sads.api:app",
+            host=args.host,
+            port=args.port,
+            reload=False,
+        )
         return 0
 
     return 1

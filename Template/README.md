@@ -8,6 +8,8 @@ Template/SpotlightAdvocate.dotx
 
 That is the gold master. Never hand-edit files in `Output/` for look-and-feel. Change the template once; rebuild the library.
 
+Full feature list and test plan: see [`../README.md`](../README.md).
+
 ## Files in this folder
 
 | File | Role |
@@ -33,15 +35,13 @@ That is the gold master. Never hand-edit files in `Output/` for look-and-feel. C
 
 3. Never hand-edit `Output/DOCX` or `Output/PDF`. Those are generated.
 
-## No paid Microsoft Word
-
-Create / refresh the gold master with Python:
+## Commands
 
 ```bash
 # Rebuild polished .docx + .dotx from code
 python3 -m sads.cli init-template --force
 
-# Or convert an edited .docx → .dotx
+# Convert an edited .docx → .dotx (no paid Word)
 python3 -m sads.cli to-dotx
 
 # Confirm placeholders are intact

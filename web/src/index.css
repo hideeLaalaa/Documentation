@@ -1,0 +1,92 @@
+@import url("https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Syne:wght@600;700;800&display=swap");
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Syne", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Source Sans 3", ui-sans-serif, system-ui, sans-serif;
+
+  --color-ink: #0b1c2e;
+  --color-ink-soft: #243447;
+  --color-mist: #e8eef4;
+  --color-paper: #f5f7fa;
+  --color-line: #c9d4e0;
+  --color-accent: #0f6b6b;
+  --color-accent-deep: #0a4f4f;
+  --color-gold: #b8956c;
+  --color-ok: #1f7a4c;
+  --color-warn: #9a6b1f;
+  --color-danger: #9b2c2c;
+}
+
+@layer base {
+  html {
+    @apply antialiased;
+  }
+
+  body {
+    @apply m-0 min-h-screen font-sans text-ink;
+    background:
+      radial-gradient(1200px 600px at 12% -10%, rgba(184, 149, 108, 0.18), transparent 55%),
+      radial-gradient(900px 500px at 100% 0%, rgba(15, 107, 107, 0.12), transparent 50%),
+      linear-gradient(165deg, #eef3f8 0%, #f7f8fa 42%, #e7eef5 100%);
+    background-attachment: fixed;
+  }
+
+  #root {
+    @apply min-h-screen;
+  }
+
+  ::selection {
+    background: rgba(15, 107, 107, 0.2);
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display);
+  }
+
+  .surface-grain {
+    background-image:
+      linear-gradient(rgba(11, 28, 46, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(11, 28, 46, 0.03) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+
+  .animate-rise {
+    animation: rise 0.55s ease-out both;
+  }
+
+  .animate-rise-delay {
+    animation: rise 0.65s ease-out 0.08s both;
+  }
+
+  .animate-rise-delay-2 {
+    animation: rise 0.7s ease-out 0.16s both;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-soft {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 1.2s ease-in-out infinite;
+}

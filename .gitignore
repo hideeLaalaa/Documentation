@@ -12,5 +12,9 @@ Output/PDF/*.pdf
 Output/Archive/*
 !Output/**/.gitkeep
 
+# Web frontend
+web/node_modules/
+web/dist/
+
 # Keep gold master + working twin tracked
 # Template/*.dotx and Template/*.docx are versioned on purpose
