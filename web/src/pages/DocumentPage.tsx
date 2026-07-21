@@ -22,7 +22,20 @@ export function DocumentPage() {
   const [flash, setFlash] = useState<string | null>(null)
   const [busySave, setBusySave] = useState(false)
   const [busyGen, setBusyGen] = useState(false)
-  const [downloadUrl, setDownloadUrl] = useState<string | null>(null)
+  const [includePdf, setIncludePdf] = useState(true)
+  const [downloadDocx, setDownloadDocx] = useState<string | null>(null)
+  const [downloadPdf, setDownloadPdf] = useState<string | null>(null)
+  const [pdfHint, setPdfHint] = useState<string | null>(null)
+
+  async function refreshFiles(num: string) {
+    try {
+      const files = await api.files(num)
+      setDownloadDocx(files.download_docx)
+      setDownloadPdf(files.download_pdf)
+    } catch {
+      /* ignore */
+    }
+  }
 
   async function load() {
     setError(null)
@@ -38,6 +51,13 @@ export function DocumentPage() {
       setPurpose(detail.raw.purpose)
       setScope(detail.raw.scope)
       setSections(detail.raw.sections.length ? detail.raw.sections : [emptySection()])
+      if (!status.pdf_backends.length) {
+        setPdfHint('No PDF converter found. Install LibreOffice for PDF export.')
+        setIncludePdf(false)
+      } else {
+        setPdfHint(null)
+      }
+      await refreshFiles(number)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load document')
     }
@@ -93,11 +113,16 @@ export function DocumentPage() {
         force: true,
       })
       setDoc(updated)
-      const result = await api.generate(number, false)
-      setDownloadUrl(result.download_docx)
-      setFlash(
-        result.pdf_note ? `Generated DOCX · ${result.pdf_note}` : 'Generated DOCX',
-      )
+      const result = await api.generate(number, includePdf)
+      setDownloadDocx(result.download_docx)
+      setDownloadPdf(result.download_pdf)
+      if (includePdf && result.pdf) {
+        setFlash('Generated Word + PDF')
+      } else if (includePdf && result.pdf_note) {
+        setFlash(`Generated Word · PDF unavailable: ${result.pdf_note}`)
+      } else {
+        setFlash('Generated Word')
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Generate failed')
     } finally {
@@ -134,17 +159,38 @@ export function DocumentPage() {
             {title || 'Untitled'}
           </h2>
         </div>
-        <div className="flex flex-wrap gap-3">
-          <Button variant="ghost" onClick={() => void onSave()} busy={busySave}>
-            Save JSON
-          </Button>
-          <Button onClick={() => void onGenerate()} busy={busyGen}>
-            Generate Word
-          </Button>
-          {downloadUrl ? (
-            <a href={downloadUrl}>
-              <Button variant="secondary">Download DOCX</Button>
-            </a>
+        <div className="flex flex-col items-stretch gap-3 sm:items-end">
+          <label className="flex items-center justify-end gap-2 text-xs text-ink-soft">
+            <input
+              type="checkbox"
+              checked={includePdf}
+              onChange={(e) => setIncludePdf(e.target.checked)}
+              className="accent-accent"
+            />
+            Also generate PDF
+          </label>
+          <div className="flex flex-wrap justify-end gap-3">
+            <Button variant="ghost" onClick={() => void onSave()} busy={busySave}>
+              Save JSON
+            </Button>
+            <Button onClick={() => void onGenerate()} busy={busyGen}>
+              Generate
+            </Button>
+            {downloadDocx ? (
+              <a href={downloadDocx}>
+                <Button variant="secondary">Download Word</Button>
+              </a>
+            ) : null}
+            {downloadPdf ? (
+              <a href={downloadPdf}>
+                <Button variant="secondary">Download PDF</Button>
+              </a>
+            ) : null}
+          </div>
+          {pdfHint ? (
+            <p className="max-w-sm text-right text-[0.7rem] leading-relaxed text-warn">
+              {pdfHint}
+            </p>
           ) : null}
         </div>
       </div>

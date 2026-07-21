@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: spotlight-advocate-docs
+    runtime: docker
+    plan: starter
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: "1"
+    # Tip: attach a persistent disk on Render for Documents/, Template/, Output/
+    # so content survives redeploys. Free/ephemeral disk resets on each deploy.

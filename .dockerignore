@@ -1,0 +1,11 @@
+# .dockerignore
+.venv/
+web/node_modules/
+web/dist/
+**/__pycache__/
+.git/
+.DS_Store
+Output/DOCX/*.docx
+Output/PDF/*.pdf
+Output/Archive/*
+*.pyc

@@ -53,6 +53,43 @@ export type StatusPayload = {
   root: string
 }
 
+export type PortalDocument = {
+  number: string
+  title: string
+  version: string
+  category: string
+  owner: string
+  approved: string
+  purpose: string
+  scope: string
+  sections: Section[]
+  revision_history: Revision[]
+  path: string
+  summary: {
+    headline: string
+    bullets: string[]
+    section_count: number
+    topics: string[]
+  }
+}
+
+export type ManualPayload = {
+  title: string
+  document_count: number
+  categories: string[]
+  documents: PortalDocument[]
+}
+
+export type SearchResult = {
+  number: string
+  title: string
+  category: string
+  approved: string
+  version: string
+  snippet: string
+  matches: { field: string; excerpt: string }[]
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, {
     ...init,
@@ -122,4 +159,29 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(body),
     }),
+  manual: (category?: string) =>
+    request<ManualPayload>(
+      category ? `/api/manual?category=${encodeURIComponent(category)}` : '/api/manual',
+    ),
+  search: (q: string, category?: string) => {
+    const params = new URLSearchParams()
+    params.set('q', q)
+    if (category) params.set('category', category)
+    return request<{ query: string; count: number; results: SearchResult[] }>(
+      `/api/search?${params.toString()}`,
+    )
+  },
+  portal: (number: string) => request<PortalDocument>(`/api/portal/${number}`),
+  summary: (number: string) =>
+    request<{ number: string; title: string; summary: PortalDocument['summary'] }>(
+      `/api/documents/${number}/summary`,
+    ),
+  files: (number: string) =>
+    request<{
+      number: string
+      docx: boolean
+      pdf: boolean
+      download_docx: string | null
+      download_pdf: string | null
+    }>(`/api/files/${number}/available`),
 }

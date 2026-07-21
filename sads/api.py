@@ -21,6 +21,7 @@ from .library import (
     validate_library,
 )
 from .paths import ROOT, output_docx_dir, output_pdf_dir, template_path
+from .portal import build_manual, document_corpus_entry, search_manual
 from .rebuild import rebuild_index, rebuild_library
 from .template import validate_template
 
@@ -138,6 +139,35 @@ def documents(category: Optional[str] = None) -> dict[str, Any]:
     if category:
         docs = [d for d in docs if d["category"] == category]
     return {"documents": docs, "count": len(docs)}
+
+
+@app.get("/api/manual")
+def manual(category: Optional[str] = None) -> dict[str, Any]:
+    """Full corpus for the searchable operations manual / portal."""
+    return build_manual(category=category)
+
+
+@app.get("/api/search")
+def search(q: str = "", category: Optional[str] = None) -> dict[str, Any]:
+    return search_manual(q, category=category)
+
+
+@app.get("/api/portal/{number}")
+def portal_document(number: str) -> dict[str, Any]:
+    """Readable web version of one document (not the editor)."""
+    try:
+        return document_corpus_entry(number)
+    except Exception as exc:
+        raise _http_error(exc) from exc
+
+
+@app.get("/api/documents/{number}/summary")
+def document_summary(number: str) -> dict[str, Any]:
+    try:
+        entry = document_corpus_entry(number)
+    except Exception as exc:
+        raise _http_error(exc) from exc
+    return {"number": entry["number"], "title": entry["title"], "summary": entry["summary"]}
 
 
 @app.get("/api/documents/{number}")
@@ -284,6 +314,20 @@ def prompt(number: str, body: Optional[PromptBody] = None) -> dict[str, str]:
     return {"prompt": text}
 
 
+@app.get("/api/files/{number}/available")
+def files_available(number: str) -> dict[str, Any]:
+    num = number.strip().upper()
+    docx = output_docx_dir() / f"{num}.docx"
+    pdf = output_pdf_dir() / f"{num}.pdf"
+    return {
+        "number": num,
+        "docx": docx.exists(),
+        "pdf": pdf.exists(),
+        "download_docx": f"/api/files/docx/{num}" if docx.exists() else None,
+        "download_pdf": f"/api/files/pdf/{num}" if pdf.exists() else None,
+    }
+
+
 @app.get("/api/files/docx/{number}")
 def download_docx(number: str):
     path = output_docx_dir() / f"{number.strip().upper()}.docx"
@@ -304,7 +348,38 @@ def download_pdf(number: str):
     return FileResponse(path, media_type="application/pdf", filename=path.name)
 
 
-# Serve built frontend when present (production)
+# ---------------------------------------------------------------------------
+# Production: serve the built React UI from the same FastAPI process
+# (one host on Render — build web/dist, then uvicorn sads.api:app)
+# ---------------------------------------------------------------------------
 _WEB_DIST = ROOT / "web" / "dist"
-if _WEB_DIST.exists():
-    app.mount("/", StaticFiles(directory=str(_WEB_DIST), html=True), name="web")
+
+
+def _attach_spa() -> None:
+    if not _WEB_DIST.exists():
+        return
+
+    assets_dir = _WEB_DIST / "assets"
+    if assets_dir.is_dir():
+        app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="assets")
+
+    @app.get("/")
+    def spa_index():
+        return FileResponse(_WEB_DIST / "index.html")
+
+    @app.get("/{full_path:path}")
+    def spa_fallback(full_path: str):
+        # Never steal API routes (safety if ordering ever changes)
+        if full_path == "api" or full_path.startswith("api/"):
+            raise HTTPException(status_code=404, detail="Not found")
+        candidate = (_WEB_DIST / full_path).resolve()
+        try:
+            candidate.relative_to(_WEB_DIST.resolve())
+        except ValueError:
+            raise HTTPException(status_code=404, detail="Not found") from None
+        if candidate.is_file():
+            return FileResponse(candidate)
+        return FileResponse(_WEB_DIST / "index.html")
+
+
+_attach_spa()

@@ -22,14 +22,51 @@ npm run dev
 
 Open **http://127.0.0.1:5173**
 
+### One-process mode (API serves the UI)
+
+Build the frontend once, then only run the backend — good for **Render**:
+
+```bash
+cd "/Users/user/Documents/Spotlight Advocate/Documentation"
+source .venv/bin/activate
+cd web && npm install && npm run build && cd ..
+python3 -m sads.cli serve
+```
+
+Then open **http://127.0.0.1:8765** (UI + API on the same port).
+
+### Deploy on Render (single service)
+
+1. Push this `Documentation/` repo (or monorepo root that contains it).
+2. Create a **Web Service** → Docker (uses `Dockerfile` + `render.yaml`).
+3. Health check: `/api/health`
+4. Attach a **persistent disk** mounted at the app root (or at least `Documents/`, `Template/`, `Output/`) so JSON and generated files survive redeploys.
+
+Without a disk, Render’s filesystem is ephemeral — fine for demos, not for a real document library.
+
+PDF on Render needs LibreOffice in the image (optional lines in the Dockerfile).
+
 | Page | What you do |
 |------|-------------|
-| **Library** | Browse / search / filter documents · Rebuild all |
-| **Document** | Edit title, purpose, scope, sections, metadata · Save JSON · Generate Word · Download |
+| **Library** | Browse / search / filter · edit sources · rebuild all |
+| **Manual** | Searchable operations manual / handbook / licensing views |
+| **Portal read** | Web reading view of one document (`/portal/SA-100`) |
+| **Document** | Edit title, purpose, scope, sections, metadata · Generate Word |
 | **New document** | Create a new SA-xxx JSON source |
 | **System** | Template + PDF status · Validate library |
 
-Mental model: **JSON = words**, **template = look**, **Generate = finished Word file**.
+### Same source, many formats
+
+| Output | How |
+|--------|-----|
+| Word (`.docx`) | Library → open doc → **Generate Word** |
+| PDF | Same, when LibreOffice/Word is available |
+| Web reading view | **Manual** or **Read** on a library row |
+| Searchable manual | **Manual** page (Operations / HR / Licensing filters) |
+| AI-style summary | Built into portal “At a glance” (extractive from JSON) |
+| Employee handbook / licensing manual | Manual filters by **HR** / **Licensing** categories |
+
+Mental model: **JSON = words**, **template = look**, **Generate / Portal / Manual = formats**.
 
 ```bash
 cd "/Users/user/Documents/Spotlight Advocate/Documentation"

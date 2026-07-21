@@ -32,6 +32,9 @@ export function Shell({ children, statusLine }: Props) {
             <NavLink to="/" end className={linkClass}>
               Library
             </NavLink>
+            <NavLink to="/manual" className={linkClass}>
+              Manual
+            </NavLink>
             <NavLink to="/new" className={linkClass}>
               New document
             </NavLink>

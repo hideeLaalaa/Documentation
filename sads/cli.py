@@ -367,6 +367,8 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.command == "serve":
+        import os
+
         try:
             import uvicorn
         except ImportError:
@@ -375,12 +377,26 @@ def main(argv: list[str] | None = None) -> int:
                 file=sys.stderr,
             )
             return 1
-        print(f"SADS API  →  http://{args.host}:{args.port}")
-        print(f"Web UI    →  http://127.0.0.1:5173  (run: cd web && npm run dev)")
+
+        host = args.host
+        port = args.port
+        # Render (and similar) inject PORT
+        if os.environ.get("PORT"):
+            port = int(os.environ["PORT"])
+            if args.host == "127.0.0.1":
+                host = "0.0.0.0"
+
+        dist = ROOT / "web" / "dist"
+        print(f"SADS server → http://{host}:{port}")
+        if dist.exists():
+            print("  UI: served from web/dist (same origin)")
+        else:
+            print("  UI: not built — run: cd web && npm run build")
+            print("       or for local Vite: cd web && npm run dev")
         uvicorn.run(
             "sads.api:app",
-            host=args.host,
-            port=args.port,
+            host=host,
+            port=port,
             reload=False,
         )
         return 0
