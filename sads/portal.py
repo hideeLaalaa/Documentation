@@ -4,6 +4,7 @@ import re
 from pathlib import Path
 from typing import Any, Optional
 
+from .brand import public_brand
 from .library import show_document
 from .paths import ROOT
 from .rebuild import discover_documents
@@ -87,7 +88,7 @@ def build_manual(category: Optional[str] = None) -> dict[str, Any]:
     entries.sort(key=lambda d: (d["category"], d["number"]))
     categories = sorted({e["category"] for e in entries})
     return {
-        "title": "Spotlight Advocate Operations Manual",
+        "title": f"{public_brand()} Operations Manual",
         "document_count": len(entries),
         "categories": categories,
         "documents": entries,

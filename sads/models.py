@@ -6,6 +6,9 @@ from pathlib import Path
 from typing import Any
 
 
+from .brand import public_brand
+
+
 @dataclass
 class Section:
     heading: str
@@ -65,7 +68,7 @@ class Document:
             title=data["title"],
             version=data.get("version", "1.0"),
             category=data.get("category", ""),
-            owner=data.get("owner", "Spotlight Advocate"),
+            owner=data.get("owner") or public_brand(),
             approved=data.get("approved", "Pending"),
             purpose=data.get("purpose", ""),
             scope=data.get("scope", ""),

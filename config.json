@@ -2,6 +2,17 @@
   "project": "Spotlight Advocate Documentation System",
   "short_name": "SADS",
   "owner": "Spotlight Advocate",
+  "brand": {
+    "legal_company": "Spotlight Media Holdings LLC",
+    "public_brand": "Spotlight Advocate",
+    "tagline": "Building Trust Through Real Conversations",
+    "website": "spotlightadvocate.com",
+    "copyright": "Spotlight Media Holdings LLC",
+    "primary_color": "Navy",
+    "accent_color": "Antique Gold",
+    "primary_hex": "#1A2B4A",
+    "accent_hex": "#C5A572"
+  },
   "paths": {
     "template": "Template/SpotlightAdvocate.dotx",
     "template_fallback": "Template/SpotlightAdvocate.docx",

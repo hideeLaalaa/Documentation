@@ -5,6 +5,7 @@ import re
 from pathlib import Path
 from typing import Any
 
+from .brand import public_brand
 from .library import CATEGORIES, PRIMARY_CATEGORIES, normalize_number, save_document_payload
 
 
@@ -44,7 +45,7 @@ Required JSON shape:
   "title": "...",
   "version": "1.0",
   "category": "Legal",
-  "owner": "Spotlight Advocate",
+  "owner": "{public_brand()}",
   "approved": "Pending",
   "purpose": "One or two sentences.",
   "scope": "Who/what this applies to.",
@@ -56,7 +57,7 @@ Required JSON shape:
     {{
       "version": "1.0",
       "date": "YYYY-MM-DD",
-      "author": "Spotlight Advocate",
+      "author": "{public_brand()}",
       "notes": "Initial draft."
     }}
   ]

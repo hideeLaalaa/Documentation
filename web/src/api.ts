@@ -62,6 +62,17 @@ export type StatusPayload = {
   layout_frozen?: boolean
   section_types?: string[]
   standard_section_order?: string[]
+  brand?: {
+    legal_company: string
+    public_brand: string
+    tagline: string
+    website: string
+    copyright: string
+    primary_color: string
+    accent_color: string
+    primary_hex: string
+    accent_hex: string
+  }
   root: string
 }
 

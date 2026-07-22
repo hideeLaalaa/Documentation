@@ -88,8 +88,8 @@ def ensure_default_clauses() -> None:
             "id": "liability",
             "title": "Standard Liability Clause",
             "body": (
-                "Except to the extent caused by Spotlight Advocate's gross negligence or "
-                "willful misconduct, Spotlight Advocate's aggregate liability arising out of "
+                "Except to the extent caused by Spotlight Media Holdings LLC's gross negligence or "
+                "willful misconduct, Spotlight Media Holdings LLC's aggregate liability arising out of "
                 "or related to this document shall not exceed the fees paid (if any) for the "
                 "specific engagement giving rise to the claim."
             ),
@@ -109,7 +109,8 @@ def ensure_default_clauses() -> None:
             "body": (
                 "IN WITNESS WHEREOF, the parties have executed this document as of the date "
                 "first written above.\n\n"
-                "Spotlight Advocate: ___________________________  Date: __________\n\n"
+                "Spotlight Media Holdings LLC\n"
+                "d/b/a Spotlight Advocate: ___________________________  Date: __________\n\n"
                 "Counterparty: ________________________________  Date: __________"
             ),
         },

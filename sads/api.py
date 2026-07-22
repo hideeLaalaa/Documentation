@@ -9,6 +9,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
+from .brand import brand_summary, public_brand
 from .ai import build_ai_prompt
 from .generate import generate, pdf_backends_available
 from .library import (
@@ -41,7 +42,7 @@ from .template_admin import (
 
 
 app = FastAPI(
-    title="Spotlight Advocate Documentation System",
+    title=f"{public_brand()} Documentation System",
     version="0.1.0",
 )
 
@@ -96,7 +97,7 @@ class DocumentPayload(BaseModel):
     title: str
     version: str = "1.0"
     category: str
-    owner: str = "Spotlight Advocate"
+    owner: str = Field(default_factory=public_brand)
     approved: str = "Pending"
     purpose: str = ""
     scope: str = ""
@@ -153,8 +154,14 @@ def status() -> dict[str, Any]:
         "layout_frozen": gov["layout_frozen"],
         "section_types": gov["section_types"],
         "standard_section_order": gov["standard_section_order"],
+        "brand": brand_summary(),
         "root": str(ROOT),
     }
+
+
+@app.get("/api/brand")
+def brand_info() -> dict[str, Any]:
+    return brand_summary()
 
 
 @app.get("/api/governance")

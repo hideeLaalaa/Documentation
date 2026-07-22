@@ -228,6 +228,19 @@ export function SystemPage() {
         </div>
 
         <dl className="mt-12 space-y-5 border-t border-line pt-6">
+          <Row label="Legal company" value={status?.brand?.legal_company ?? '—'} />
+          <Row label="Public brand" value={status?.brand?.public_brand ?? '—'} />
+          <Row label="Tagline" value={status?.brand?.tagline ?? '—'} />
+          <Row label="Website" value={status?.brand?.website ?? '—'} />
+          <Row label="Copyright" value={status?.brand?.copyright ?? '—'} />
+          <Row
+            label="Colors"
+            value={
+              status?.brand
+                ? `${status.brand.primary_color} / ${status.brand.accent_color}`
+                : '—'
+            }
+          />
           <Row label="Documents" value={String(status?.document_count ?? '—')} />
           <Row
             label="PDF backends"

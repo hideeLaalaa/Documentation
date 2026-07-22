@@ -6,6 +6,7 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
+from .brand import public_brand
 from .models import load_document
 from .paths import ROOT, documents_root, load_config
 from .rebuild import discover_documents, rebuild_index
@@ -91,7 +92,7 @@ def new_document(
         "title": title.strip() or f"{number} Untitled",
         "version": version,
         "category": category,
-        "owner": owner or cfg.get("owner", "Spotlight Advocate"),
+        "owner": owner or cfg.get("owner") or public_brand(),
         "approved": approved,
         "purpose": purpose,
         "scope": scope,
@@ -136,7 +137,7 @@ def new_document(
             {
                 "version": version,
                 "date": date.today().isoformat(),
-                "author": owner or cfg.get("owner", "Spotlight Advocate"),
+                "author": owner or cfg.get("owner") or public_brand(),
                 "notes": "Initial draft.",
             }
         ],
@@ -389,7 +390,7 @@ def update_metadata(
             {
                 "version": applied["version"],
                 "date": date.today().isoformat(),
-                "author": data.get("owner", "Spotlight Advocate"),
+                "author": data.get("owner") or public_brand(),
                 "notes": notes or f"Metadata update to version {applied['version']}.",
             }
         )
@@ -399,7 +400,7 @@ def update_metadata(
             {
                 "version": data.get("version", "1.0"),
                 "date": date.today().isoformat(),
-                "author": data.get("owner", "Spotlight Advocate"),
+                "author": data.get("owner") or public_brand(),
                 "notes": notes,
             }
         )

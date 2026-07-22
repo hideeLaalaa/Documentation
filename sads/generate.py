@@ -12,6 +12,7 @@ from docx.oxml import OxmlElement
 from docx.shared import Cm, Pt, RGBColor
 from docx.text.paragraph import Paragraph
 
+from .brand import brand, brand_placeholders, primary_rgb, public_brand
 from .clauses import ensure_default_clauses, expand_clause_references
 from .components import (
     Component,
@@ -30,7 +31,7 @@ from .paths import (
 )
 from .template import DOCX_MAIN_CONTENT_TYPE, DOTX_MAIN_CONTENT_TYPE
 
-NAVY = RGBColor(0x1A, 0x2B, 0x4A)
+NAVY = primary_rgb()
 GRAY = RGBColor(0x55, 0x55, 0x55)
 WARN = RGBColor(0x8B, 0x2E, 0x2E)
 NOTE = RGBColor(0x3A, 0x4A, 0x5C)
@@ -493,6 +494,10 @@ def generate(number: str, *, make_pdf: bool = True) -> dict:
         # Expanded separately; leave empty if a stray token remains
         "{{REVISION_HISTORY}}": "",
         "{{BODY}}": "",
+        **brand_placeholders(),
+        # Legacy legal entity rename (global)
+        "Spotlight Alliance LLC": brand()["legal_company"],
+        "Spotlight Alliance": brand()["legal_company"],
     }
 
     out_docx = output_docx_dir() / f"{document.number}.docx"

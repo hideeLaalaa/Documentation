@@ -1,5 +1,6 @@
 import { Link, NavLink } from 'react-router-dom'
-import type { ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
+import { api, type StatusPayload } from '../api'
 
 type Props = {
   children: ReactNode
@@ -7,6 +8,22 @@ type Props = {
 }
 
 export function Shell({ children, statusLine }: Props) {
+  const [brand, setBrand] = useState<StatusPayload['brand']>()
+
+  useEffect(() => {
+    void api
+      .status()
+      .then((s) => setBrand(s.brand))
+      .catch(() => {
+        /* keep defaults */
+      })
+  }, [])
+
+  const publicBrand = brand?.public_brand ?? 'Spotlight Advocate'
+  const tagline = brand?.tagline ?? 'Building Trust Through Real Conversations'
+  const copyright = brand?.copyright ?? 'Spotlight Media Holdings LLC'
+  const website = brand?.website ?? 'spotlightadvocate.com'
+
   const linkClass = ({ isActive }: { isActive: boolean }) =>
     [
       'cursor-pointer text-sm tracking-wide transition-colors duration-200',
@@ -21,11 +38,12 @@ export function Shell({ children, statusLine }: Props) {
         <div className="mx-auto flex max-w-6xl items-end justify-between gap-6 px-6 py-5 md:px-8">
           <Link to="/" className="group block">
             <p className="font-display text-[0.7rem] font-bold tracking-[0.28em] text-accent">
-              SPOTLIGHT ADVOCATE
+              {publicBrand.toUpperCase()}
             </p>
             <h1 className="font-display mt-1 text-2xl font-extrabold tracking-tight text-ink transition-transform duration-300 group-hover:translate-x-0.5 md:text-3xl">
               Documentation System
             </h1>
+            <p className="mt-1 max-w-md text-xs text-ink-soft/70">{tagline}</p>
           </Link>
 
           <nav className="flex flex-wrap items-center gap-x-6 gap-y-2 pb-1">
@@ -57,7 +75,15 @@ export function Shell({ children, statusLine }: Props) {
       </main>
 
       <footer className="relative mx-auto max-w-6xl px-6 pb-10 pt-2 text-xs text-ink-soft/60 md:px-8">
-        Content in JSON · Formatting in the gold master · Output is generated
+        © {copyright} · {publicBrand} ·{' '}
+        <a
+          className="underline decoration-line underline-offset-2 hover:text-ink"
+          href={`https://${website}`}
+          target="_blank"
+          rel="noreferrer"
+        >
+          {website}
+        </a>
       </footer>
     </div>
   )

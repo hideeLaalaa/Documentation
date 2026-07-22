@@ -5,14 +5,15 @@
   --font-display: "Syne", ui-sans-serif, system-ui, sans-serif;
   --font-sans: "Source Sans 3", ui-sans-serif, system-ui, sans-serif;
 
-  --color-ink: #0b1c2e;
-  --color-ink-soft: #243447;
+  /* PRIMARY = Navy · ACCENT = Antique Gold */
+  --color-ink: #1a2b4a;
+  --color-ink-soft: #2f4060;
   --color-mist: #e8eef4;
   --color-paper: #f5f7fa;
   --color-line: #c9d4e0;
-  --color-accent: #0f6b6b;
-  --color-accent-deep: #0a4f4f;
-  --color-gold: #b8956c;
+  --color-accent: #c5a572;
+  --color-accent-deep: #a8864f;
+  --color-gold: #c5a572;
   --color-ok: #1f7a4c;
   --color-warn: #9a6b1f;
   --color-danger: #9b2c2c;
@@ -26,8 +27,8 @@
   body {
     @apply m-0 min-h-screen font-sans text-ink;
     background:
-      radial-gradient(1200px 600px at 12% -10%, rgba(184, 149, 108, 0.18), transparent 55%),
-      radial-gradient(900px 500px at 100% 0%, rgba(15, 107, 107, 0.12), transparent 50%),
+      radial-gradient(1200px 600px at 12% -10%, rgba(197, 165, 114, 0.2), transparent 55%),
+      radial-gradient(900px 500px at 100% 0%, rgba(26, 43, 74, 0.1), transparent 50%),
       linear-gradient(165deg, #eef3f8 0%, #f7f8fa 42%, #e7eef5 100%);
     background-attachment: fixed;
   }
@@ -37,7 +38,7 @@
   }
 
   ::selection {
-    background: rgba(15, 107, 107, 0.2);
+    background: rgba(197, 165, 114, 0.28);
   }
 }
 

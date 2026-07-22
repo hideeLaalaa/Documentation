@@ -11,6 +11,8 @@ from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Inches, Pt, RGBColor
 
+from .brand import brand, primary_rgb, public_brand, tagline
+
 
 NAVY = RGBColor(0x1A, 0x2B, 0x4A)
 GRAY = RGBColor(0x55, 0x55, 0x55)
@@ -189,6 +191,9 @@ def build_master_template(destination: Path) -> Path:
     """
     destination.parent.mkdir(parents=True, exist_ok=True)
     doc = Document()
+    identity = brand()
+    navy = primary_rgb()
+    rule_hex = identity["primary_hex"].lstrip("#").upper()
 
     section = doc.sections[0]
     section.top_margin = Inches(0.85)
@@ -199,16 +204,16 @@ def build_master_template(destination: Path) -> Path:
     section.page_height = Inches(11.0)
 
     # --- Brand masthead ---
-    brand = doc.add_paragraph()
-    _space_after(brand, 2)
-    run = brand.add_run("SPOTLIGHT ADVOCATE")
-    _set_run(run, size=12, bold=True, color=NAVY)
+    brand_line = doc.add_paragraph()
+    _space_after(brand_line, 2)
+    run = brand_line.add_run(public_brand().upper())
+    _set_run(run, size=12, bold=True, color=navy)
 
-    tagline = doc.add_paragraph()
-    _space_after(tagline, 6)
-    run = tagline.add_run("Official Document")
+    tagline_p = doc.add_paragraph()
+    _space_after(tagline_p, 6)
+    run = tagline_p.add_run(tagline())
     _set_run(run, size=9, color=GRAY)
-    _bottom_rule(tagline)
+    _bottom_rule(tagline_p, color=rule_hex)
 
     spacer = doc.add_paragraph()
     _space_after(spacer, 10)
@@ -217,14 +222,14 @@ def build_master_template(destination: Path) -> Path:
     number = doc.add_paragraph()
     _space_after(number, 2)
     run = number.add_run("{{NUMBER}}")
-    _set_run(run, size=11, bold=True, color=NAVY)
+    _set_run(run, size=11, bold=True, color=navy)
 
     title = doc.add_paragraph()
     title.paragraph_format.space_after = Pt(4)
     title.paragraph_format.space_before = Pt(0)
     title.paragraph_format.line_spacing_rule = WD_LINE_SPACING.SINGLE
     run = title.add_run("{{TITLE}}")
-    _set_run(run, size=22, bold=True, color=NAVY)
+    _set_run(run, size=22, bold=True, color=navy)
 
     meta = doc.add_paragraph()
     _space_after(meta, 14)
@@ -235,7 +240,7 @@ def build_master_template(destination: Path) -> Path:
     purpose_h = doc.add_paragraph()
     _space_after(purpose_h, 4)
     run = purpose_h.add_run("Purpose")
-    _set_run(run, size=13, bold=True, color=NAVY)
+    _set_run(run, size=13, bold=True, color=navy)
 
     purpose = doc.add_paragraph()
     _space_after(purpose, 12)
@@ -247,7 +252,7 @@ def build_master_template(destination: Path) -> Path:
     scope_h = doc.add_paragraph()
     _space_after(scope_h, 4)
     run = scope_h.add_run("Scope")
-    _set_run(run, size=13, bold=True, color=NAVY)
+    _set_run(run, size=13, bold=True, color=navy)
 
     scope = doc.add_paragraph()
     _space_after(scope, 12)
@@ -266,7 +271,7 @@ def build_master_template(destination: Path) -> Path:
     rev_h = doc.add_paragraph()
     _space_after(rev_h, 4)
     run = rev_h.add_run("Revision History")
-    _set_run(run, size=13, bold=True, color=NAVY)
+    _set_run(run, size=13, bold=True, color=navy)
 
     rev = doc.add_paragraph()
     _space_after(rev, 6)
@@ -282,7 +287,9 @@ def build_master_template(destination: Path) -> Path:
     for run in list(fp.runs):
         run.text = ""
     left = fp.add_run(
-        "Spotlight Advocate  ·  Confidential  ·  {{NUMBER}}  ·  Rev {{VERSION}}  ·  Page "
+        f"© {identity['copyright']}  ·  {identity['public_brand']}  ·  "
+        f"{identity['website']}  ·  Confidential  ·  {{{{NUMBER}}}}  ·  "
+        f"Rev {{{{VERSION}}}}  ·  Page "
     )
     _set_run(left, size=8, color=GRAY)
     _add_page_number_field(fp)
