@@ -184,4 +184,54 @@ export const api = {
       download_docx: string | null
       download_pdf: string | null
     }>(`/api/files/${number}/available`),
+  templateStatus: () => request<TemplateStatus>('/api/template'),
+  uploadTemplate: async (file: File) => {
+    const body = new FormData()
+    body.append('file', file)
+    const res = await fetch('/api/template/upload', { method: 'POST', body })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }))
+      throw new Error(typeof err.detail === 'string' ? err.detail : JSON.stringify(err.detail))
+    }
+    return res.json() as Promise<TemplateStatus>
+  },
+  uploadLogo: async (file: File) => {
+    const body = new FormData()
+    body.append('file', file)
+    const res = await fetch('/api/template/logo', { method: 'POST', body })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }))
+      throw new Error(typeof err.detail === 'string' ? err.detail : JSON.stringify(err.detail))
+    }
+    return res.json() as Promise<TemplateStatus>
+  },
+  applyLogo: () =>
+    request<TemplateStatus>('/api/template/apply-logo', { method: 'POST', body: '{}' }),
+  rebuildStarterTemplate: () =>
+    request<TemplateStatus>('/api/template/rebuild-starter', {
+      method: 'POST',
+      body: '{}',
+    }),
+}
+
+export type TemplateStatus = {
+  active: string | null
+  active_error: string | null
+  docx: string
+  docx_exists: boolean
+  dotx: string
+  dotx_exists: boolean
+  logo: string | null
+  logo_exists: boolean
+  logo_url: string | null
+  download_docx: string
+  download_dotx: string
+  required_placeholders: string[]
+  validation: {
+    ok: boolean
+    missing: string[]
+    is_dotx?: boolean
+    path?: string
+    error?: string
+  } | null
 }

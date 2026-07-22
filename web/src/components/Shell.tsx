@@ -39,7 +39,7 @@ export function Shell({ children, statusLine }: Props) {
               New document
             </NavLink>
             <NavLink to="/system" className={linkClass}>
-              System
+              System / Template
             </NavLink>
           </nav>
         </div>

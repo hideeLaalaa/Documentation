@@ -1,18 +1,25 @@
-import { useEffect, useState } from 'react'
-import { api, type StatusPayload } from '../api'
+import { useEffect, useRef, useState } from 'react'
+import { api, type StatusPayload, type TemplateStatus } from '../api'
 import { Button } from '../components/Button'
 import { Shell } from '../components/Shell'
 
 export function SystemPage() {
   const [status, setStatus] = useState<StatusPayload | null>(null)
+  const [template, setTemplate] = useState<TemplateStatus | null>(null)
   const [validation, setValidation] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [flash, setFlash] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [busyTemplate, setBusyTemplate] = useState(false)
+  const templateInput = useRef<HTMLInputElement>(null)
+  const logoInput = useRef<HTMLInputElement>(null)
 
   async function load() {
     setError(null)
     try {
-      setStatus(await api.status())
+      const [s, t] = await Promise.all([api.status(), api.templateStatus()])
+      setStatus(s)
+      setTemplate(t)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load status')
     }
@@ -42,6 +49,63 @@ export function SystemPage() {
     }
   }
 
+  async function onTemplateFile(file: File | undefined) {
+    if (!file) return
+    setBusyTemplate(true)
+    setFlash(null)
+    setError(null)
+    try {
+      const next = await api.uploadTemplate(file)
+      setTemplate(next)
+      setFlash(
+        next.validation?.ok
+          ? 'Master template uploaded and validated. Rebuild the library to refresh all Word files.'
+          : 'Template uploaded — check missing placeholders below.',
+      )
+      await load()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Template upload failed')
+    } finally {
+      setBusyTemplate(false)
+      if (templateInput.current) templateInput.current.value = ''
+    }
+  }
+
+  async function onLogoFile(file: File | undefined) {
+    if (!file) return
+    setBusyTemplate(true)
+    setFlash(null)
+    setError(null)
+    try {
+      const next = await api.uploadLogo(file)
+      setTemplate(next)
+      setFlash(
+        'Logo uploaded and applied to the gold master header. Generate a document to see it.',
+      )
+      await load()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Logo upload failed')
+    } finally {
+      setBusyTemplate(false)
+      if (logoInput.current) logoInput.current.value = ''
+    }
+  }
+
+  async function onRebuildStarter() {
+    setBusyTemplate(true)
+    setFlash(null)
+    setError(null)
+    try {
+      const next = await api.rebuildStarterTemplate()
+      setTemplate(next)
+      setFlash('Starter gold master rebuilt' + (next.logo_exists ? ' (logo re-applied).' : '.'))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Rebuild failed')
+    } finally {
+      setBusyTemplate(false)
+    }
+  }
+
   return (
     <Shell>
       <section className="animate-rise max-w-3xl">
@@ -49,10 +113,10 @@ export function SystemPage() {
           System
         </p>
         <h2 className="font-display mt-2 text-4xl font-extrabold tracking-tight text-ink">
-          Health & tooling
+          Health & branding
         </h2>
         <p className="mt-3 text-ink-soft/85">
-          Check the gold master, PDF converters, and validate every JSON source.
+          Manage the master template and logo here — no repository access required.
         </p>
 
         {error ? (
@@ -60,22 +124,111 @@ export function SystemPage() {
             {error}
           </p>
         ) : null}
+        {flash ? (
+          <p className="mt-6 rounded-md border border-ok/30 bg-ok/5 px-4 py-3 text-sm text-ok">
+            {flash}
+          </p>
+        ) : null}
 
-        <dl className="animate-rise-delay mt-10 space-y-5 border-t border-line pt-6">
+        <div className="animate-rise-delay mt-10 border-t border-line pt-8">
+          <h3 className="font-display text-xl font-bold text-ink">Master template</h3>
+          <p className="mt-2 text-sm leading-relaxed text-ink-soft">
+            Upload a designed Word file (<code className="text-xs">.docx</code> or{' '}
+            <code className="text-xs">.dotx</code>). Keep placeholders such as{' '}
+            <code className="text-xs">{'{{TITLE}}'}</code> and{' '}
+            <code className="text-xs">{'{{BODY}}'}</code> exactly as written.
+          </p>
+
+          <dl className="mt-6 space-y-3">
+            <Row label="Active file" value={template?.active ?? template?.active_error ?? '—'} />
+            <Row
+              label="Placeholders"
+              value={
+                template?.validation?.ok
+                  ? 'OK — all required placeholders present'
+                  : template?.validation?.missing?.length
+                    ? `Missing: ${template.validation.missing.join(', ')}`
+                    : template?.validation?.error ?? '—'
+              }
+            />
+          </dl>
+
+          <div className="mt-6 flex flex-wrap gap-3">
+            <input
+              ref={templateInput}
+              type="file"
+              accept=".docx,.dotx,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.wordprocessingml.template"
+              className="hidden"
+              onChange={(e) => void onTemplateFile(e.target.files?.[0])}
+            />
+            <Button
+              busy={busyTemplate}
+              onClick={() => templateInput.current?.click()}
+            >
+              Upload master template
+            </Button>
+            <a href="/api/template/download?format=docx">
+              <Button variant="secondary">Download .docx</Button>
+            </a>
+            <a href="/api/template/download?format=dotx">
+              <Button variant="ghost">Download .dotx</Button>
+            </a>
+            <Button
+              variant="ghost"
+              busy={busyTemplate}
+              onClick={() => void onRebuildStarter()}
+            >
+              Reset starter template
+            </Button>
+          </div>
+        </div>
+
+        <div className="animate-rise-delay-2 mt-12 border-t border-line pt-8">
+          <h3 className="font-display text-xl font-bold text-ink">Logo / header</h3>
+          <p className="mt-2 text-sm leading-relaxed text-ink-soft">
+            Upload a PNG or JPG. It is saved and inserted into the gold master header so
+            generated Word files show the brand mark.
+          </p>
+
+          {template?.logo_url ? (
+            <div className="mt-5 flex items-center gap-4 rounded-md border border-line bg-white/50 px-4 py-3">
+              <img
+                src={`${template.logo_url}?t=${Date.now()}`}
+                alt="Current logo"
+                className="h-12 w-auto object-contain"
+              />
+              <p className="text-xs text-ink-soft">{template.logo}</p>
+            </div>
+          ) : (
+            <p className="mt-4 text-sm text-warn">
+              No logo uploaded yet — this is why generated docs had no logo.
+            </p>
+          )}
+
+          <div className="mt-6 flex flex-wrap gap-3">
+            <input
+              ref={logoInput}
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif,.png,.jpg,.jpeg,.webp,.gif"
+              className="hidden"
+              onChange={(e) => void onLogoFile(e.target.files?.[0])}
+            />
+            <Button busy={busyTemplate} onClick={() => logoInput.current?.click()}>
+              Upload logo
+            </Button>
+          </div>
+        </div>
+
+        <dl className="mt-12 space-y-5 border-t border-line pt-6">
           <Row label="Documents" value={String(status?.document_count ?? '—')} />
-          <Row
-            label="Template"
-            value={status?.template ?? status?.template_error ?? '—'}
-          />
           <Row
             label="PDF backends"
             value={
               status?.pdf_backends?.length
                 ? status.pdf_backends.join(' · ')
-                : 'None — install LibreOffice or use DOCX only'
+                : 'None — install LibreOffice or use Word only'
             }
           />
-          <Row label="Project root" value={status?.root ?? '—'} />
         </dl>
 
         <div className="mt-8 flex flex-wrap gap-3">
@@ -93,20 +246,27 @@ export function SystemPage() {
           </pre>
         ) : null}
 
-        <div className="animate-rise-delay-2 mt-12 border-t border-line pt-8">
-          <h3 className="font-display text-xl font-bold text-ink">How this works</h3>
+        <div className="mt-12 border-t border-line pt-8">
+          <h3 className="font-display text-xl font-bold text-ink">Update branding</h3>
           <ol className="mt-4 list-decimal space-y-3 pl-5 text-sm leading-relaxed text-ink-soft">
             <li>
-              <strong className="text-ink">Write words</strong> in JSON (this app or
-              Cursor).
+              Upload a <strong className="text-ink">logo</strong> (PNG/JPG) — it is applied
+              to the document header automatically.
             </li>
             <li>
-              <strong className="text-ink">Look & feel</strong> lives only in the gold
-              master template.
+              Optional: upload a full <strong className="text-ink">master template</strong>{' '}
+              (<code className="text-xs">.docx</code> / <code className="text-xs">.dotx</code>) —
+              keep placeholders such as <code className="text-xs">{'{{TITLE}}'}</code> and{' '}
+              <code className="text-xs">{'{{BODY}}'}</code>.
             </li>
             <li>
-              <strong className="text-ink">Generate</strong> pours content into the
-              template and saves a Word file under Output/DOCX.
+              Open any document in the <strong className="text-ink">Library</strong>, then
+              click <strong className="text-ink">Generate</strong> to produce Word output with
+              the new look.
+            </li>
+            <li>
+              After a template change, use <strong className="text-ink">Rebuild library</strong>{' '}
+              to refresh every document at once.
             </li>
           </ol>
         </div>

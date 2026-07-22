@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Optional
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -24,6 +24,17 @@ from .paths import ROOT, output_docx_dir, output_pdf_dir, template_path
 from .portal import build_manual, document_corpus_entry, search_manual
 from .rebuild import rebuild_index, rebuild_library
 from .template import validate_template
+from .template_admin import (
+    apply_logo_to_gold_master,
+    logo_path,
+    rebuild_starter_with_optional_logo,
+    save_uploaded_logo,
+    save_uploaded_template,
+    template_docx_path,
+    template_dotx_path,
+    template_status,
+    _clear_body_masthead_when_logo_present,
+)
 
 
 app = FastAPI(
@@ -300,6 +311,85 @@ def validate_tmpl() -> dict[str, Any]:
         "missing": result["missing"],
         "is_dotx": result["is_dotx"],
     }
+
+
+@app.get("/api/template")
+def get_template_status() -> dict[str, Any]:
+    return template_status()
+
+
+@app.get("/api/template/download")
+def download_template(format: str = "dotx"):
+    fmt = format.strip().lower()
+    if fmt == "docx":
+        path = template_docx_path()
+    elif fmt == "dotx":
+        path = template_dotx_path()
+        if not path.exists():
+            path = template_docx_path()
+    else:
+        raise HTTPException(status_code=400, detail="format must be docx or dotx")
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="Template file not found")
+    media = (
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.template"
+        if path.suffix.lower() == ".dotx"
+        else "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    )
+    return FileResponse(path, media_type=media, filename=path.name)
+
+
+@app.post("/api/template/upload")
+async def upload_template(file: UploadFile = File(...)) -> dict[str, Any]:
+    raw = await file.read()
+    try:
+        return save_uploaded_template(raw, file.filename or "template.docx")
+    except Exception as exc:
+        raise _http_error(exc) from exc
+
+
+@app.get("/api/template/logo")
+def get_logo():
+    path = logo_path()
+    if path is None:
+        raise HTTPException(status_code=404, detail="No logo uploaded")
+    suffix = path.suffix.lower()
+    media = {
+        ".png": "image/png",
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".webp": "image/webp",
+        ".gif": "image/gif",
+    }.get(suffix, "application/octet-stream")
+    return FileResponse(path, media_type=media, filename=path.name)
+
+
+@app.post("/api/template/logo")
+async def upload_logo(file: UploadFile = File(...)) -> dict[str, Any]:
+    raw = await file.read()
+    try:
+        save_uploaded_logo(raw, file.filename or "logo.png")
+        apply_logo_to_gold_master()
+        _clear_body_masthead_when_logo_present()
+        return template_status()
+    except Exception as exc:
+        raise _http_error(exc) from exc
+
+
+@app.post("/api/template/apply-logo")
+def apply_logo() -> dict[str, Any]:
+    try:
+        return apply_logo_to_gold_master()
+    except Exception as exc:
+        raise _http_error(exc) from exc
+
+
+@app.post("/api/template/rebuild-starter")
+def rebuild_starter() -> dict[str, Any]:
+    try:
+        return rebuild_starter_with_optional_logo()
+    except Exception as exc:
+        raise _http_error(exc) from exc
 
 
 @app.post("/api/prompt/{number}")
