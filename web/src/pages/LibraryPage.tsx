@@ -98,7 +98,7 @@ export function LibraryPage() {
                 type="button"
                 onClick={() => setCategory(cat)}
                 className={[
-                  'rounded-md px-3 py-1.5 text-xs font-semibold tracking-wide transition-colors',
+                  'cursor-pointer rounded-md px-3 py-1.5 text-xs font-semibold tracking-wide transition-colors',
                   category === cat
                     ? 'bg-ink text-paper'
                     : 'text-ink-soft hover:bg-white/50',

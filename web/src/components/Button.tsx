@@ -32,7 +32,7 @@ export function Button({
       {...rest}
       disabled={disabled || busy}
       className={[
-        'inline-flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-semibold tracking-wide transition-all duration-200',
+        'inline-flex cursor-pointer items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-semibold tracking-wide transition-all duration-200',
         'disabled:cursor-not-allowed disabled:opacity-50',
         'active:translate-y-px',
         styles[variant],

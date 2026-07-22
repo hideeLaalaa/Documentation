@@ -95,7 +95,7 @@ export function ManualPage() {
               type="button"
               onClick={() => setPreset(p.id)}
               className={[
-                'rounded-md px-3 py-1.5 text-xs font-semibold tracking-wide transition-colors',
+                'cursor-pointer rounded-md px-3 py-1.5 text-xs font-semibold tracking-wide transition-colors',
                 preset === p.id ? 'bg-ink text-paper' : 'text-ink-soft hover:bg-white/50',
               ].join(' ')}
             >

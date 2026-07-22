@@ -9,7 +9,7 @@ type Props = {
 export function Shell({ children, statusLine }: Props) {
   const linkClass = ({ isActive }: { isActive: boolean }) =>
     [
-      'text-sm tracking-wide transition-colors duration-200',
+      'cursor-pointer text-sm tracking-wide transition-colors duration-200',
       isActive ? 'text-accent font-semibold' : 'text-ink-soft/80 hover:text-ink',
     ].join(' ')
 
