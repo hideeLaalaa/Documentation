@@ -1,12 +1,12 @@
-import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { api } from '../api'
+import { api, type StatusPayload } from '../api'
 import { Button } from '../components/Button'
 import { Shell } from '../components/Shell'
 
 export function NewDocumentPage() {
   const navigate = useNavigate()
-  const [categories, setCategories] = useState<string[]>([])
+  const [status, setStatus] = useState<StatusPayload | null>(null)
   const [number, setNumber] = useState('SA-')
   const [title, setTitle] = useState('')
   const [category, setCategory] = useState('Legal')
@@ -15,13 +15,30 @@ export function NewDocumentPage() {
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
+  const categories = status?.categories ?? []
+  const rangeHint = useMemo(() => {
+    const range = status?.category_ranges?.[category]
+    if (!range) return null
+    return `${range.from}–${range.to}`
+  }, [status, category])
+
   useEffect(() => {
     void api.status().then((s) => {
-      setCategories(s.categories)
+      setStatus(s)
       if (s.categories.includes('Legal')) setCategory('Legal')
       else if (s.categories.length) setCategory(s.categories[0])
     })
   }, [])
+
+  useEffect(() => {
+    if (!category) return
+    void api
+      .nextNumber(category)
+      .then((r) => setNumber(r.number))
+      .catch(() => {
+        /* leave number editable */
+      })
+  }, [category])
 
   async function onCreate(e: FormEvent) {
     e.preventDefault()
@@ -57,11 +74,33 @@ export function NewDocumentPage() {
           New document
         </h2>
         <p className="mt-3 text-ink-soft/85">
-          Creates a JSON source under <code className="text-sm">Documents/</code>. You can
-          edit content next, then generate Word.
+          Creates a JSON source under <code className="text-sm">Documents/</code>. Numbers
+          follow the category band — presentation stays in the gold master.
         </p>
 
         <form onSubmit={(e) => void onCreate(e)} className="animate-rise-delay mt-10 space-y-5">
+          <Field label="Category">
+            <select
+              className={inputClass}
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+            >
+              {categories.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                  {status?.category_ranges?.[c]
+                    ? ` (${status.category_ranges[c].from}–${status.category_ranges[c].to})`
+                    : ''}
+                </option>
+              ))}
+            </select>
+            {rangeHint ? (
+              <p className="mt-1.5 text-xs text-ink-soft/75">
+                Reserved range for {category}: {rangeHint}. Next free number is suggested
+                automatically.
+              </p>
+            ) : null}
+          </Field>
           <Field label="Number">
             <input
               required
@@ -79,19 +118,6 @@ export function NewDocumentPage() {
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Official document title"
             />
-          </Field>
-          <Field label="Category">
-            <select
-              className={inputClass}
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-            >
-              {categories.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
           </Field>
           <Field label="Purpose">
             <textarea

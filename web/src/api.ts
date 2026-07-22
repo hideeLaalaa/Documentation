@@ -8,7 +8,14 @@ export type DocSummary = {
   approved: string
 }
 
-export type Section = { heading: string; body: string }
+export type Section = {
+  heading: string
+  body: string
+  type?: string
+  rows?: string[][]
+  src?: string
+  alt?: string
+}
 export type Revision = {
   version: string
   date: string
@@ -50,7 +57,28 @@ export type StatusPayload = {
   document_count: number
   pdf_backends: string[]
   categories: string[]
+  all_categories?: string[]
+  category_ranges?: Record<string, { from: string; to: string }>
+  layout_frozen?: boolean
+  section_types?: string[]
+  standard_section_order?: string[]
   root: string
+}
+
+export type GovernancePayload = {
+  layout_frozen: boolean
+  primary_categories: string[]
+  category_ranges: Record<string, { from: string; to: string }>
+  standard_section_order: string[]
+  section_types: string[]
+  metadata_fields: string[]
+}
+
+export type ClauseItem = {
+  id: string
+  title: string
+  path: string
+  body: string
 }
 
 export type PortalDocument = {
@@ -151,9 +179,22 @@ export const api = {
       body: JSON.stringify({ make_pdf }),
     }),
   validate: () =>
-    request<{ ok: boolean; count: number; documents: { number: string; ok: boolean; errors: string[] }[] }>(
-      '/api/validate',
+    request<{
+      ok: boolean
+      count: number
+      documents: {
+        number: string
+        ok: boolean
+        errors: string[]
+        warnings?: string[]
+      }[]
+    }>('/api/validate'),
+  governance: () => request<GovernancePayload>('/api/governance'),
+  nextNumber: (category: string) =>
+    request<{ category: string; number: string }>(
+      `/api/numbers/next?category=${encodeURIComponent(category)}`,
     ),
+  clauses: () => request<{ count: number; clauses: ClauseItem[] }>('/api/clauses'),
   prompt: (number: string, body: Record<string, unknown>) =>
     request<{ prompt: string }>(`/api/prompt/${number}`, {
       method: 'POST',

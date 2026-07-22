@@ -1,0 +1,100 @@
+{
+  "number": "SA-200",
+  "title": "Studio Access Protocol",
+  "version": "1.0",
+  "category": "Operations",
+  "owner": "Spotlight Advocate",
+  "approved": "Draft",
+  "purpose": "Define how personnel enter and use studio spaces.",
+  "scope": "Applies to Spotlight Advocate staff and authorized contractors on production days.",
+  "sections": [
+    {
+      "heading": "Purpose",
+      "type": "section",
+      "body": "Define how personnel enter and use studio spaces."
+    },
+    {
+      "heading": "Scope",
+      "type": "section",
+      "body": "Applies to Spotlight Advocate staff and authorized contractors on production days."
+    },
+    {
+      "heading": "Definitions",
+      "type": "definition",
+      "body": "Studio \u2014 a controlled production space managed by Spotlight Advocate.\nAuthorized personnel \u2014 staff or contractors with current access approval."
+    },
+    {
+      "heading": "Responsibilities",
+      "type": "responsibilities",
+      "body": "Studio Manager \u2014 controls access lists and day-of entry.\nPersonnel \u2014 follow check-in and safety rules while on site."
+    },
+    {
+      "heading": "Procedure",
+      "type": "procedure",
+      "body": "Replace this section with the first substantive clause."
+    },
+    {
+      "heading": "Exceptions",
+      "type": "section",
+      "body": "Emergency access may be granted by the Studio Manager and must be logged the same day."
+    },
+    {
+      "heading": "References",
+      "type": "section",
+      "body": "Related: production safety guidelines; contractor onboarding checklist."
+    },
+    {
+      "heading": "Access levels",
+      "type": "table",
+      "body": "",
+      "rows": [
+        [
+          "Level",
+          "Who",
+          "Hours"
+        ],
+        [
+          "Full",
+          "Staff",
+          "All scheduled hours"
+        ],
+        [
+          "Limited",
+          "Contractors",
+          "Call sheet window"
+        ],
+        [
+          "Escorted",
+          "Guests",
+          "With host present"
+        ]
+      ]
+    }
+  ],
+  "revision_history": [
+    {
+      "version": "1.0",
+      "date": "2026-07-21",
+      "author": "Spotlight Advocate",
+      "notes": "Initial draft."
+    },
+    {
+      "version": "1.0",
+      "date": "2026-07-21",
+      "author": "Spotlight Advocate",
+      "notes": "Framework placeholder."
+    },
+    {
+      "version": "1.0",
+      "date": "2026-07-21",
+      "author": "Spotlight Advocate",
+      "notes": "Renumbered from SA-101 into Operations band SA-200\u2013299."
+    },
+    {
+      "version": "1.0",
+      "date": "2026-07-22",
+      "author": "Spotlight Advocate",
+      "notes": "Normalized to standard section order; added table component example."
+    }
+  ]
+}

@@ -7,8 +7,10 @@ const PRESETS = [
   { id: 'All', label: 'All documents', category: undefined as string | undefined },
   { id: 'Operations', label: 'Operations manual', category: 'Operations' },
   { id: 'HR', label: 'Employee handbook', category: 'HR' },
-  { id: 'Licensing', label: 'Licensing manual', category: 'Licensing' },
   { id: 'Legal', label: 'Legal library', category: 'Legal' },
+  { id: 'Sales', label: 'Sales', category: 'Sales' },
+  { id: 'Technical', label: 'Technical', category: 'Technical' },
+  { id: 'Licensing', label: 'Licensing (legacy)', category: 'Licensing' },
 ]
 
 export function ManualPage() {

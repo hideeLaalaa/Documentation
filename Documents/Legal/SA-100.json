@@ -9,6 +9,16 @@
   "scope": "Applies to any business location where Spotlight Advocate conducts photography, video, or related production activities with the property owner's consent.",
   "sections": [
     {
+      "heading": "Purpose",
+      "type": "section",
+      "body": "To authorize Spotlight Advocate to access, photograph, film, and use designated business premises for production purposes under agreed terms."
+    },
+    {
+      "heading": "Scope",
+      "type": "section",
+      "body": "Applies to any business location where Spotlight Advocate conducts photography, video, or related production activities with the property owner's consent."
+    },
+    {
       "heading": "Grant of Access",
       "body": "The Property Owner grants Spotlight Advocate and its authorized personnel reasonable access to the designated premises for the purpose of producing photographic and audiovisual content. Access is limited to the areas and times agreed in writing or as otherwise coordinated between the parties."
     },
@@ -35,6 +45,12 @@
       "date": "2026-07-21",
       "author": "Spotlight Advocate",
       "notes": "Initial framework draft for SADS."
+    },
+    {
+      "version": "1.0",
+      "date": "2026-07-22",
+      "author": "Spotlight Advocate",
+      "notes": "Assembled Purpose/Scope as leading body components (standard order)."
     }
   ]
 }

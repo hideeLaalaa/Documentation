@@ -27,6 +27,9 @@ def _haystack(doc: dict[str, Any]) -> str:
 
 def document_corpus_entry(number_or_path: str | Path) -> dict[str, Any]:
     """Full structured document for portal / manual rendering."""
+    from .clauses import expand_clause_references
+    from .components import assemble_body_components, table_rows_from_section
+
     if isinstance(number_or_path, Path):
         from .models import load_document
 
@@ -38,6 +41,25 @@ def document_corpus_entry(number_or_path: str | Path) -> dict[str, Any]:
     raw = info["raw"]
     path = info["path"]
     rel = str(path.relative_to(ROOT)) if isinstance(path, Path) else str(path)
+
+    assembled = assemble_body_components(
+        purpose=str(raw.get("purpose") or ""),
+        scope=str(raw.get("scope") or ""),
+        sections=list(raw.get("sections") or []),
+    )
+    sections = []
+    for component in assembled:
+        item = {
+            "heading": component.heading,
+            "body": expand_clause_references(component.body),
+            "type": component.type,
+            "src": component.src,
+            "alt": component.alt,
+        }
+        if component.type == "table":
+            item["rows"] = table_rows_from_section(component)
+        sections.append(item)
+
     return {
         "number": raw["number"],
         "title": raw["title"],
@@ -45,12 +67,12 @@ def document_corpus_entry(number_or_path: str | Path) -> dict[str, Any]:
         "category": raw["category"],
         "owner": raw["owner"],
         "approved": raw["approved"],
-        "purpose": raw["purpose"],
-        "scope": raw["scope"],
-        "sections": raw["sections"],
+        "purpose": expand_clause_references(raw.get("purpose", "")),
+        "scope": expand_clause_references(raw.get("scope", "")),
+        "sections": sections,
         "revision_history": raw["revision_history"],
         "path": rel,
-        "summary": summarize_document(raw),
+        "summary": summarize_document({**raw, "sections": sections}),
     }
 
 

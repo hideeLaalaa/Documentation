@@ -35,7 +35,15 @@ export function SystemPage() {
     try {
       const report = await api.validate()
       if (report.ok) {
-        setValidation(`All ${report.count} documents OK`)
+        const warned = report.documents.filter((d) => (d.warnings?.length ?? 0) > 0)
+        setValidation(
+          warned.length
+            ? `All ${report.count} documents OK\n` +
+                warned
+                  .map((d) => `${d.number}: ${(d.warnings ?? []).join('; ')}`)
+                  .join('\n')
+            : `All ${report.count} documents OK`,
+        )
       } else {
         const failed = report.documents.filter((d) => !d.ok)
         setValidation(
@@ -245,6 +253,39 @@ export function SystemPage() {
             {validation}
           </pre>
         ) : null}
+
+        <div className="mt-12 border-t border-line pt-8">
+          <h3 className="font-display text-xl font-bold text-ink">House style (frozen)</h3>
+          <p className="mt-2 text-sm leading-relaxed text-ink-soft">
+            Visual identity is locked. Change the gold master only for real usability
+            problems — not fonts, spacing, or decorative polish. Content evolves;
+            presentation stays deterministic.
+          </p>
+          {status?.category_ranges ? (
+            <dl className="mt-5 grid gap-2 text-sm sm:grid-cols-2">
+              {Object.entries(status.category_ranges).map(([cat, range]) => (
+                <div key={cat} className="flex justify-between gap-3 border-b border-line/60 py-1.5">
+                  <dt className="text-ink">{cat}</dt>
+                  <dd className="text-ink-soft">
+                    {range.from}–{range.to}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          ) : null}
+          {status?.standard_section_order?.length ? (
+            <p className="mt-5 text-sm text-ink-soft">
+              Standard section order:{' '}
+              <span className="text-ink">{status.standard_section_order.join(' → ')}</span>
+            </p>
+          ) : null}
+          {status?.section_types?.length ? (
+            <p className="mt-2 text-sm text-ink-soft">
+              Body components:{' '}
+              <span className="text-ink">{status.section_types.join(', ')}</span>
+            </p>
+          ) : null}
+        </div>
 
         <div className="mt-12 border-t border-line pt-8">
           <h3 className="font-display text-xl font-bold text-ink">Update branding</h3>

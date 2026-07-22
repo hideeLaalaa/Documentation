@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-from .library import CATEGORIES, normalize_number, save_document_payload
+from .library import CATEGORIES, PRIMARY_CATEGORIES, normalize_number, save_document_payload
 
 
 def build_ai_prompt(
@@ -20,7 +20,7 @@ def build_ai_prompt(
     """
     number = normalize_number(number)
     title_line = title or "(propose a clear official title)"
-    category_line = category or f"one of: {', '.join(CATEGORIES)}"
+    category_line = category or f"one of: {', '.join(PRIMARY_CATEGORIES)}"
     brief_block = brief.strip() if brief else (
         "Write a practical Spotlight Advocate business document. "
         "Tone: clear, professional, concise. Avoid legalese theater."
@@ -49,7 +49,8 @@ Required JSON shape:
   "purpose": "One or two sentences.",
   "scope": "Who/what this applies to.",
   "sections": [
-    {{"heading": "Section Name", "body": "Paragraph text..."}}
+    {{"heading": "Definitions", "type": "definition", "body": "..."}},
+    {{"heading": "Procedure", "type": "procedure", "body": "..."}}
   ],
   "revision_history": [
     {{
@@ -62,10 +63,14 @@ Required JSON shape:
 }}
 
 Rules:
-- category must be exactly one of: {", ".join(CATEGORIES)}
+- category must be exactly one of: {", ".join(PRIMARY_CATEGORIES)}
+- Prefer standard section order when relevant: Purpose, Scope, Definitions, Responsibilities, Procedure, Exceptions, References
+- Section type should be one of: section, definition, responsibilities, procedure, warning, note, tip, signature, approval, appendix
+- Reuse boilerplate with {{{{clause:liability}}}}, {{{{clause:confidentiality}}}}, or {{{{clause:signature-block}}}}
 - Include 3–7 focused sections
 - Body text should be ready to publish
 - Use today's date in revision_history
+- Number must sit in the category band (Legal SA-100–199, Operations SA-200–299, Sales SA-300–399, Marketing SA-400–499, HR SA-500–599, Technical SA-600–699, Finance SA-700–799, Administration SA-800–899)
 """
 
 

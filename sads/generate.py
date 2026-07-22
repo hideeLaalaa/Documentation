@@ -9,9 +9,16 @@ from pathlib import Path
 
 from docx import Document as WordDocument
 from docx.oxml import OxmlElement
-from docx.shared import Pt, RGBColor
+from docx.shared import Cm, Pt, RGBColor
 from docx.text.paragraph import Paragraph
 
+from .clauses import ensure_default_clauses, expand_clause_references
+from .components import (
+    Component,
+    assemble_body_components,
+    resolve_image_path,
+    table_rows_from_section,
+)
 from .models import Document, find_document_file, load_document
 from .paths import (
     archive_dir,
@@ -25,6 +32,8 @@ from .template import DOCX_MAIN_CONTENT_TYPE, DOTX_MAIN_CONTENT_TYPE
 
 NAVY = RGBColor(0x1A, 0x2B, 0x4A)
 GRAY = RGBColor(0x55, 0x55, 0x55)
+WARN = RGBColor(0x8B, 0x2E, 0x2E)
+NOTE = RGBColor(0x3A, 0x4A, 0x5C)
 
 LIBREOFFICE_CANDIDATES = (
     "soffice",
@@ -134,55 +143,169 @@ def _write_paragraph(
     paragraph.paragraph_format.space_before = Pt(0)
 
 
+def _heading_for_component(component: Component) -> tuple[str, RGBColor]:
+    """Return display heading and color for a body component type."""
+    stype = (component.type or "section").lower()
+    label = {
+        "warning": "Warning",
+        "note": "Note",
+        "tip": "Tip",
+    }.get(stype)
+    color = WARN if stype == "warning" else (NOTE if stype in ("note", "tip") else NAVY)
+    if label and not component.heading.lower().startswith(label.lower()):
+        return f"{label} — {component.heading}" if component.heading else label, color
+    return component.heading, color
+
+
+def _insert_table_after(doc: WordDocument, anchor: Paragraph, rows: list[list[str]]) -> Paragraph:
+    """Insert a content table after anchor; return a spacer paragraph after the table."""
+    if not rows:
+        return anchor
+    cols = max(len(r) for r in rows)
+    table = doc.add_table(rows=len(rows), cols=cols)
+    table.style = "Table Grid"
+    table.autofit = True
+    for r_i, row in enumerate(rows):
+        for c_i in range(cols):
+            value = row[c_i] if c_i < len(row) else ""
+            _set_cell_text(table.rows[r_i].cells[c_i], value, bold=(r_i == 0), size=10)
+    anchor._p.addnext(table._tbl)
+    spacer_el = OxmlElement("w:p")
+    table._tbl.addnext(spacer_el)
+    return Paragraph(spacer_el, anchor._parent)
+
+
 def _expand_body_placeholder(doc: WordDocument, document: Document) -> None:
-    """Replace {{BODY}} with section headings + body paragraphs."""
+    """Replace {{BODY}} with assembled typed building blocks."""
     target = _find_placeholder_paragraph(doc, "{{BODY}}")
     if target is None:
         return
 
     _clear_paragraph(target)
-    if not document.sections:
+    components = assemble_body_components(
+        purpose=document.purpose,
+        scope=document.scope,
+        sections=document.sections,
+        include_purpose_scope=False,  # gold master already shows {{PURPOSE}}/{{SCOPE}}
+    )
+    if not components:
         return
 
     anchor = target
     first = True
-    for section in document.sections:
-        if first:
-            _write_paragraph(
-                anchor,
-                section.heading,
-                size=13,
-                bold=True,
-                color=NAVY,
-                space_after=4,
-            )
-            first = False
-        else:
-            anchor = _insert_paragraph_after(anchor)
-            _write_paragraph(
-                anchor,
-                section.heading,
-                size=13,
-                bold=True,
-                color=NAVY,
-                space_after=4,
-            )
+    for component in components:
+        stype = (component.type or "section").lower()
 
-        body_chunks = [c.strip() for c in section.body.split("\n\n") if c.strip()]
+        # paragraph: body only (optional light heading)
+        if stype == "paragraph":
+            if component.heading:
+                if first:
+                    _write_paragraph(
+                        anchor, component.heading, size=11, bold=True, color=NAVY, space_after=2
+                    )
+                    first = False
+                else:
+                    anchor = _insert_paragraph_after(anchor)
+                    _write_paragraph(
+                        anchor, component.heading, size=11, bold=True, color=NAVY, space_after=2
+                    )
+            body = expand_clause_references(component.body or "")
+            for chunk in [c.strip() for c in body.split("\n\n") if c.strip()] or [""]:
+                if first:
+                    _write_paragraph(anchor, chunk, size=11, space_after=8)
+                    first = False
+                else:
+                    anchor = _insert_paragraph_after(anchor)
+                    _write_paragraph(anchor, chunk, size=11, space_after=8)
+            continue
+
+        heading, color = _heading_for_component(component)
+        if heading:
+            if first:
+                _write_paragraph(anchor, heading, size=13, bold=True, color=color, space_after=4)
+                first = False
+            else:
+                anchor = _insert_paragraph_after(anchor)
+                _write_paragraph(anchor, heading, size=13, bold=True, color=color, space_after=4)
+
+        if stype == "table":
+            rows = table_rows_from_section(component)
+            caption = expand_clause_references(component.body or "").strip()
+            if rows and parse_looks_like_table(caption):
+                caption = ""
+            if caption:
+                if first and not heading:
+                    _write_paragraph(anchor, caption, size=10, color=GRAY, space_after=4)
+                    first = False
+                else:
+                    anchor = _insert_paragraph_after(anchor)
+                    _write_paragraph(anchor, caption, size=10, color=GRAY, space_after=4)
+            if rows:
+                if first:
+                    first = False
+                anchor = _insert_table_after(doc, anchor, rows)
+            continue
+
+        if stype == "image":
+            caption = expand_clause_references(component.body or "").strip()
+            image_path = resolve_image_path(component.src)
+            if image_path is not None:
+                if first and not heading:
+                    run = anchor.add_run()
+                    run.add_picture(str(image_path), width=Cm(14))
+                    first = False
+                else:
+                    anchor = _insert_paragraph_after(anchor)
+                    run = anchor.add_run()
+                    run.add_picture(str(image_path), width=Cm(14))
+            else:
+                missing = f"[Image not found: {component.src or '(no src)'}]"
+                if first and not heading:
+                    _write_paragraph(anchor, missing, size=10, color=GRAY, space_after=6)
+                    first = False
+                else:
+                    anchor = _insert_paragraph_after(anchor)
+                    _write_paragraph(anchor, missing, size=10, color=GRAY, space_after=6)
+            if caption:
+                anchor = _insert_paragraph_after(anchor)
+                _write_paragraph(anchor, caption, size=9, color=GRAY, space_after=8)
+            continue
+
+        body = expand_clause_references(component.body or "")
+        body_chunks = [c.strip() for c in body.split("\n\n") if c.strip()]
         if not body_chunks:
-            body_chunks = [section.body.strip()] if section.body.strip() else [""]
+            body_chunks = [body.strip()] if body.strip() else [""]
 
         for chunk in body_chunks:
             anchor = _insert_paragraph_after(anchor)
-            _write_paragraph(anchor, chunk, size=11, space_after=8)
+            if stype in ("signature", "approval"):
+                _write_paragraph(anchor, chunk, size=10, space_after=10)
+                anchor.paragraph_format.space_before = Pt(6)
+            elif stype == "procedure":
+                _write_paragraph(anchor, chunk, size=11, space_after=6)
+            else:
+                _write_paragraph(anchor, chunk, size=11, space_after=8)
 
-        # Breathing room between sections
         anchor = _insert_paragraph_after(anchor)
         _write_paragraph(anchor, "", size=11, space_after=4)
 
 
+def parse_looks_like_table(text: str) -> bool:
+    lines = [ln for ln in text.splitlines() if ln.strip()]
+    return len(lines) >= 2 and all("|" in ln for ln in lines[:3])
+
+
+def _set_cell_text(cell, text: str, *, bold: bool = False, size: int = 9) -> None:
+    cell.text = ""
+    paragraph = cell.paragraphs[0]
+    run = paragraph.add_run(text)
+    _style_run(run, size=size, bold=bold, color=NAVY if bold else GRAY)
+    paragraph.paragraph_format.space_after = Pt(0)
+    paragraph.paragraph_format.space_before = Pt(0)
+
+
 def _expand_revision_placeholder(doc: WordDocument, document: Document) -> None:
-    """Replace {{REVISION_HISTORY}} with one line per revision."""
+    """Replace {{REVISION_HISTORY}} with a structured Version/Date/Author/Description table."""
     target = _find_placeholder_paragraph(doc, "{{REVISION_HISTORY}}")
     if target is None:
         return
@@ -199,17 +322,28 @@ def _expand_revision_placeholder(doc: WordDocument, document: Document) -> None:
         )
         return
 
-    anchor = target
-    first = True
-    for rev in revisions:
-        line = f"{rev.version}  ·  {rev.date}  ·  {rev.author}  ·  {rev.notes}"
-        if first:
-            _write_paragraph(anchor, line, size=9, color=GRAY, space_after=2)
-            first = False
-        else:
-            anchor = _insert_paragraph_after(anchor)
-            _write_paragraph(anchor, line, size=9, color=GRAY, space_after=2)
+    # Build table at end of document, then move after the placeholder paragraph
+    table = doc.add_table(rows=1 + len(revisions), cols=4)
+    table.style = "Table Grid"
+    table.autofit = True
 
+    headers = ("Version", "Date", "Author", "Description")
+    for i, label in enumerate(headers):
+        _set_cell_text(table.rows[0].cells[i], label, bold=True, size=9)
+
+    for row_i, rev in enumerate(revisions, start=1):
+        _set_cell_text(table.rows[row_i].cells[0], rev.version)
+        _set_cell_text(table.rows[row_i].cells[1], rev.date)
+        _set_cell_text(table.rows[row_i].cells[2], rev.author)
+        _set_cell_text(table.rows[row_i].cells[3], rev.notes)
+
+    # Prefer reasonable column widths (deterministic layout)
+    widths = (Cm(2.2), Cm(2.6), Cm(3.4), Cm(8.0))
+    for row in table.rows:
+        for cell, width in zip(row.cells, widths):
+            cell.width = width
+
+    target._p.addnext(table._tbl)
 
 def _replace_placeholders(doc: WordDocument, mapping: dict[str, str]) -> None:
     for paragraph in doc.paragraphs:
@@ -341,6 +475,7 @@ def generate(number: str, *, make_pdf: bool = True) -> dict:
     save DOCX → optional PDF → done.
     """
     number = number.strip().upper()
+    ensure_default_clauses()
     source = find_document_file(number, documents_root())
     document = load_document(source)
     template = template_path()
@@ -348,8 +483,8 @@ def generate(number: str, *, make_pdf: bool = True) -> dict:
     mapping = {
         "{{NUMBER}}": document.number,
         "{{TITLE}}": document.title,
-        "{{PURPOSE}}": document.purpose,
-        "{{SCOPE}}": document.scope,
+        "{{PURPOSE}}": expand_clause_references(document.purpose),
+        "{{SCOPE}}": expand_clause_references(document.scope),
         "{{VERSION}}": document.version,
         "{{CATEGORY}}": document.category,
         "{{OWNER}}": document.owner,

@@ -10,6 +10,10 @@ from typing import Any
 class Section:
     heading: str
     body: str
+    type: str = "section"
+    rows: list[list[str]] | None = None
+    src: str = ""
+    alt: str = ""
 
 
 @dataclass
@@ -17,7 +21,7 @@ class Revision:
     version: str
     date: str
     author: str
-    notes: str
+    notes: str  # Description (Recommendation 6)
 
 
 @dataclass
@@ -37,7 +41,14 @@ class Document:
     @classmethod
     def from_dict(cls, data: dict[str, Any], source_path: Path | None = None) -> Document:
         sections = [
-            Section(heading=s.get("heading", ""), body=s.get("body", ""))
+            Section(
+                heading=s.get("heading", ""),
+                body=s.get("body", ""),
+                type=(s.get("type") or "section").strip().lower() or "section",
+                rows=s.get("rows") if isinstance(s.get("rows"), list) else None,
+                src=str(s.get("src") or ""),
+                alt=str(s.get("alt") or ""),
+            )
             for s in data.get("sections", [])
         ]
         revisions = [
@@ -45,7 +56,7 @@ class Document:
                 version=r.get("version", ""),
                 date=r.get("date", ""),
                 author=r.get("author", ""),
-                notes=r.get("notes", ""),
+                notes=r.get("notes") or r.get("description", ""),
             )
             for r in data.get("revision_history", [])
         ]
@@ -66,7 +77,6 @@ class Document:
     def to_index_entry(self) -> dict[str, Any]:
         rel = ""
         if self.source_path is not None:
-            # Paths relative to Documentation root
             try:
                 from .paths import ROOT
 

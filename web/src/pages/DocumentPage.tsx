@@ -1,10 +1,50 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { api, type DocumentDetail, type Section } from '../api'
+import { api, type ClauseItem, type DocumentDetail, type Section } from '../api'
 import { Button } from '../components/Button'
 import { Shell } from '../components/Shell'
 
-const emptySection = (): Section => ({ heading: '', body: '' })
+const emptySection = (): Section => ({
+  heading: '',
+  body: '',
+  type: 'section',
+  rows: undefined,
+  src: '',
+  alt: '',
+})
+
+const SECTION_TYPES = [
+  'section',
+  'paragraph',
+  'definition',
+  'responsibilities',
+  'procedure',
+  'warning',
+  'note',
+  'tip',
+  'signature',
+  'approval',
+  'appendix',
+  'table',
+  'image',
+]
+
+function rowsToText(rows?: string[][]): string {
+  if (!rows?.length) return ''
+  return rows.map((r) => r.join(' | ')).join('\n')
+}
+
+function textToRows(text: string): string[][] {
+  return text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) =>
+      line.includes('|')
+        ? line.split('|').map((c) => c.trim())
+        : [line],
+    )
+}
 
 export function DocumentPage() {
   const { number = '' } = useParams()
@@ -18,6 +58,8 @@ export function DocumentPage() {
   const [scope, setScope] = useState('')
   const [sections, setSections] = useState<Section[]>([emptySection()])
   const [categories, setCategories] = useState<string[]>([])
+  const [sectionTypes, setSectionTypes] = useState<string[]>(SECTION_TYPES)
+  const [clauses, setClauses] = useState<ClauseItem[]>([])
   const [error, setError] = useState<string | null>(null)
   const [flash, setFlash] = useState<string | null>(null)
   const [busySave, setBusySave] = useState(false)
@@ -40,9 +82,15 @@ export function DocumentPage() {
   async function load() {
     setError(null)
     try {
-      const [detail, status] = await Promise.all([api.get(number), api.status()])
+      const [detail, status, clausePayload] = await Promise.all([
+        api.get(number),
+        api.status(),
+        api.clauses().catch(() => ({ count: 0, clauses: [] as ClauseItem[] })),
+      ])
       setDoc(detail)
-      setCategories(status.categories)
+      setCategories(status.all_categories ?? status.categories)
+      setSectionTypes(status.section_types?.length ? status.section_types : SECTION_TYPES)
+      setClauses(clausePayload.clauses)
       setTitle(detail.raw.title)
       setVersion(detail.raw.version)
       setCategory(detail.raw.category)
@@ -50,7 +98,17 @@ export function DocumentPage() {
       setApproved(detail.raw.approved)
       setPurpose(detail.raw.purpose)
       setScope(detail.raw.scope)
-      setSections(detail.raw.sections.length ? detail.raw.sections : [emptySection()])
+      setSections(
+        detail.raw.sections.length
+          ? detail.raw.sections.map((s) => ({
+              ...s,
+              type: s.type || 'section',
+              rows: s.rows,
+              src: s.src || '',
+              alt: s.alt || '',
+            }))
+          : [emptySection()],
+      )
       if (!status.pdf_backends.length) {
         setPdfHint('No PDF converter found. Install LibreOffice for PDF export.')
         setIncludePdf(false)
@@ -67,24 +125,45 @@ export function DocumentPage() {
     void load()
   }, [number])
 
+  function payload() {
+    return {
+      number,
+      title,
+      version,
+      category,
+      owner,
+      approved,
+      purpose,
+      scope,
+      sections: sections
+        .filter((s) => s.heading.trim() || s.body.trim() || s.rows?.length || s.src?.trim())
+        .map((s) => {
+          const base: Section = {
+            heading: s.heading,
+            body: s.body,
+            type: s.type || 'section',
+          }
+          if ((s.type || 'section') === 'table') {
+            base.rows = s.rows?.length ? s.rows : textToRows(s.body)
+            if (!s.rows?.length) base.body = ''
+          }
+          if ((s.type || 'section') === 'image') {
+            base.src = s.src || ''
+            base.alt = s.alt || s.heading
+          }
+          return base
+        }),
+      revision_history: doc?.raw.revision_history ?? [],
+      force: true,
+    }
+  }
+
   async function onSave() {
     setBusySave(true)
     setFlash(null)
     setError(null)
     try {
-      const updated = await api.save(number, {
-        number,
-        title,
-        version,
-        category,
-        owner,
-        approved,
-        purpose,
-        scope,
-        sections: sections.filter((s) => s.heading.trim() || s.body.trim()),
-        revision_history: doc?.raw.revision_history ?? [],
-        force: true,
-      })
+      const updated = await api.save(number, payload())
       setDoc(updated)
       setFlash('Saved to JSON source')
     } catch (err) {
@@ -99,19 +178,7 @@ export function DocumentPage() {
     setFlash(null)
     setError(null)
     try {
-      const updated = await api.save(number, {
-        number,
-        title,
-        version,
-        category,
-        owner,
-        approved,
-        purpose,
-        scope,
-        sections: sections.filter((s) => s.heading.trim() || s.body.trim()),
-        revision_history: doc?.raw.revision_history ?? [],
-        force: true,
-      })
+      const updated = await api.save(number, payload())
       setDoc(updated)
       const result = await api.generate(number, includePdf)
       setDownloadDocx(result.download_docx)
@@ -132,6 +199,15 @@ export function DocumentPage() {
 
   function updateSection(i: number, patch: Partial<Section>) {
     setSections((prev) => prev.map((s, idx) => (idx === i ? { ...s, ...patch } : s)))
+  }
+
+  function insertClause(i: number, clauseId: string) {
+    const token = `{{clause:${clauseId}}}`
+    updateSection(i, {
+      body: sections[i].body
+        ? `${sections[i].body.trimEnd()}\n\n${token}`
+        : token,
+    })
   }
 
   if (!doc && !error) {
@@ -243,18 +319,73 @@ export function DocumentPage() {
             <div className="space-y-5">
               {sections.map((section, i) => (
                 <div key={i} className="border-t border-line/80 pt-5">
-                  <input
-                    className={`${inputClass} mb-2 font-semibold`}
-                    placeholder="Section heading"
-                    value={section.heading}
-                    onChange={(e) => updateSection(i, { heading: e.target.value })}
-                  />
+                  <div className="mb-2 grid gap-2 sm:grid-cols-[1fr_10rem]">
+                    <input
+                      className={`${inputClass} font-semibold`}
+                      placeholder="Section heading"
+                      value={section.heading}
+                      onChange={(e) => updateSection(i, { heading: e.target.value })}
+                    />
+                    <select
+                      className={inputClass}
+                      value={section.type || 'section'}
+                      onChange={(e) => updateSection(i, { type: e.target.value })}
+                    >
+                      {sectionTypes.map((t) => (
+                        <option key={t} value={t}>
+                          {t}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                   <textarea
                     className={`${inputClass} min-h-28`}
-                    placeholder="Section body"
+                    placeholder={
+                      section.type === 'table'
+                        ? 'Optional caption (use the table grid below for cells)'
+                        : section.type === 'image'
+                          ? 'Image caption'
+                          : 'Section body — use {{clause:liability}} for reusable boilerplate'
+                    }
                     value={section.body}
                     onChange={(e) => updateSection(i, { body: e.target.value })}
                   />
+                  {section.type === 'table' ? (
+                    <textarea
+                      className={`${inputClass} mt-2 min-h-24 font-mono text-xs`}
+                      placeholder={'Header A | Header B\nValue 1 | Value 2'}
+                      value={rowsToText(section.rows) || (section.body.includes('|') ? section.body : '')}
+                      onChange={(e) =>
+                        updateSection(i, {
+                          rows: textToRows(e.target.value),
+                          body: section.body.includes('|') ? '' : section.body,
+                        })
+                      }
+                    />
+                  ) : null}
+                  {section.type === 'image' ? (
+                    <input
+                      className={`${inputClass} mt-2`}
+                      placeholder="Image path e.g. Output/Images/logo.png"
+                      value={section.src || ''}
+                      onChange={(e) => updateSection(i, { src: e.target.value })}
+                    />
+                  ) : null}
+                  {clauses.length ? (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {clauses.map((c) => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          className="rounded border border-line bg-white/60 px-2 py-1 text-[0.65rem] font-semibold tracking-wide text-ink-soft uppercase hover:border-accent/40 hover:text-accent"
+                          onClick={() => insertClause(i, c.id)}
+                          title={c.title}
+                        >
+                          + {c.id}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
                   {sections.length > 1 ? (
                     <button
                       type="button"

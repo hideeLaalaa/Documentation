@@ -288,6 +288,8 @@ def main(argv: list[str] | None = None) -> int:
             rel = item["path"].relative_to(ROOT)
             if item["ok"]:
                 print(f"  OK   {item['number']}  ({rel})")
+                for warn in item.get("warnings") or []:
+                    print(f"       ! {warn}")
             else:
                 failed += 1
                 print(f"  FAIL {item['number']}  ({rel})")

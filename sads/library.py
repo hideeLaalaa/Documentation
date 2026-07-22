@@ -9,17 +9,19 @@ from typing import Any
 from .models import load_document
 from .paths import ROOT, documents_root, load_config
 from .rebuild import discover_documents, rebuild_index
-
-
-CATEGORIES = (
-    "Corporate",
-    "Legal",
-    "Operations",
-    "Sales",
-    "Production",
-    "HR",
-    "Licensing",
+from .governance import (
+    CATEGORIES,
+    PRIMARY_CATEGORIES,
+    SECTION_TYPES,
+    validate_number_category,
+    suggest_next_number,
 )
+from .components import (
+    ensure_purpose_scope_sections,
+    section_order_warnings_for_document,
+    table_rows_from_section,
+)
+
 
 METADATA_FIELDS = ("title", "version", "category", "owner", "approved")
 
@@ -66,8 +68,11 @@ def new_document(
     number = normalize_number(number)
     if category not in CATEGORIES:
         raise ValueError(
-            f"Unknown category {category!r}. Choose one of: {', '.join(CATEGORIES)}"
+            f"Unknown category {category!r}. Choose one of: {', '.join(PRIMARY_CATEGORIES)}"
         )
+    range_errors = validate_number_category(number, category)
+    if range_errors:
+        raise ValueError("; ".join(range_errors))
 
     # Refuse duplicates anywhere in the library
     existing = list(documents_root().rglob(f"{number}.json"))
@@ -92,9 +97,40 @@ def new_document(
         "scope": scope,
         "sections": [
             {
-                "heading": "Overview",
-                "body": "Replace this section with the first substantive clause.",
-            }
+                "heading": "Purpose",
+                "type": "section",
+                "body": purpose or "State the purpose of this document.",
+            },
+            {
+                "heading": "Scope",
+                "type": "section",
+                "body": scope or "State who or what this document applies to.",
+            },
+            {
+                "heading": "Definitions",
+                "type": "definition",
+                "body": "Define key terms used in this document.",
+            },
+            {
+                "heading": "Responsibilities",
+                "type": "responsibilities",
+                "body": "List who is responsible for what.",
+            },
+            {
+                "heading": "Procedure",
+                "type": "procedure",
+                "body": "Describe the steps to follow.",
+            },
+            {
+                "heading": "Exceptions",
+                "type": "section",
+                "body": "Note any exceptions to the standard procedure.",
+            },
+            {
+                "heading": "References",
+                "type": "section",
+                "body": "List related documents or policies.",
+            },
         ],
         "revision_history": [
             {
@@ -156,7 +192,7 @@ def validate_document_data(
         if category not in CATEGORIES:
             errors.append(
                 f"invalid category {category!r}; "
-                f"expected one of {', '.join(CATEGORIES)}"
+                f"expected one of {', '.join(PRIMARY_CATEGORIES)}"
             )
         elif source_path is not None:
             expected_parent = documents_root() / category
@@ -168,6 +204,8 @@ def validate_document_data(
                     )
             except OSError:
                 pass
+        if isinstance(number, str) and NUMBER_RE.match(number):
+            errors.extend(validate_number_category(number, category))
     elif "category" in data:
         errors.append("category must be a string")
 
@@ -178,6 +216,7 @@ def validate_document_data(
             )
 
     sections = data.get("sections")
+    warnings: list[str] = []
     if "sections" in data:
         if not isinstance(sections, list):
             errors.append("sections must be an array")
@@ -188,6 +227,21 @@ def validate_document_data(
                     continue
                 if "heading" not in section or "body" not in section:
                     errors.append(f"sections[{i}] needs heading and body")
+                stype = (section.get("type") or "section").strip().lower()
+                if stype and stype not in SECTION_TYPES:
+                    errors.append(
+                        f"sections[{i}].type {stype!r} invalid; "
+                        f"expected one of {', '.join(SECTION_TYPES)}"
+                    )
+                if stype == "table":
+                    rows = table_rows_from_section(section)
+                    if not rows:
+                        errors.append(
+                            f"sections[{i}] type=table needs rows or a pipe table in body"
+                        )
+                if stype == "image" and not str(section.get("src") or "").strip():
+                    errors.append(f"sections[{i}] type=image needs src")
+            warnings.extend(section_order_warnings_for_document(data))
 
     revisions = data.get("revision_history")
     if "revision_history" in data:
@@ -198,6 +252,9 @@ def validate_document_data(
                 if not isinstance(rev, dict):
                     errors.append(f"revision_history[{i}] must be an object")
                     continue
+                # Accept notes or description (Recommendation 6)
+                if "notes" not in rev and "description" in rev:
+                    rev["notes"] = rev["description"]
                 for key in ("version", "date", "author", "notes"):
                     if key not in rev:
                         errors.append(f"revision_history[{i}] missing {key}")
@@ -207,18 +264,19 @@ def validate_document_data(
                         f"revision_history[{i}].date must be YYYY-MM-DD"
                     )
 
-    return errors
+    return errors, warnings
 
 
 def validate_document(path: Path) -> dict[str, Any]:
     with open(path, encoding="utf-8") as f:
         data = json.load(f)
-    errors = validate_document_data(data, source_path=path)
+    errors, warnings = validate_document_data(data, source_path=path)
     return {
         "path": path,
         "number": data.get("number"),
         "ok": not errors,
         "errors": errors,
+        "warnings": warnings,
     }
 
 
@@ -346,12 +404,12 @@ def update_metadata(
             }
         )
 
-    errors = validate_document_data(data, source_path=path)
+    errors, _warnings = validate_document_data(data, source_path=path)
     # Category move: validate against destination folder after move
     dest = path
     if "category" in applied:
         dest = document_path(number, applied["category"])
-        errors = validate_document_data(data, source_path=dest)
+        errors, _warnings = validate_document_data(data, source_path=dest)
     if errors:
         raise ValueError("; ".join(errors))
 
@@ -378,7 +436,7 @@ def save_document_payload(data: dict[str, Any], *, force: bool = False) -> Path:
         raise ValueError(
             f"Unknown category {category!r}. Choose one of: {', '.join(CATEGORIES)}"
         )
-    data = dict(data)
+    data = ensure_purpose_scope_sections(dict(data))
     data["number"] = number
 
     dest = document_path(number, category)
@@ -391,7 +449,7 @@ def save_document_payload(data: dict[str, Any], *, force: bool = False) -> Path:
             + " (use --force to overwrite)"
         )
 
-    errors = validate_document_data(data, source_path=dest)
+    errors, _warnings = validate_document_data(data, source_path=dest)
     if errors:
         raise ValueError("; ".join(errors))
 

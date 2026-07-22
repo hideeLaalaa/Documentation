@@ -1,6 +1,6 @@
 {
   "project": "Spotlight Advocate Documentation System",
-  "updated": "2026-07-21",
+  "updated": "2026-07-22",
   "documents": [
     {
       "number": "SA-100",
@@ -12,15 +12,6 @@
       "approved": "Pending"
     },
     {
-      "number": "SA-101",
-      "title": "Studio Access Protocol",
-      "version": "1.0",
-      "category": "Operations",
-      "path": "Documents/Operations/SA-101.json",
-      "owner": "Spotlight Advocate",
-      "approved": "Draft"
-    },
-    {
       "number": "SA-102",
       "title": "Talent Appearance Release",
       "version": "1.0",
@@ -28,6 +19,15 @@
       "path": "Documents/Legal/SA-102.json",
       "owner": "Spotlight Advocate",
       "approved": "Pending"
+    },
+    {
+      "number": "SA-200",
+      "title": "Studio Access Protocol",
+      "version": "1.0",
+      "category": "Operations",
+      "path": "Documents/Operations/SA-200.json",
+      "owner": "Spotlight Advocate",
+      "approved": "Draft"
     }
   ]
 }

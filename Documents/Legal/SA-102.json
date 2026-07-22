@@ -9,6 +9,16 @@
   "scope": "Applies to individuals appearing on camera in Spotlight Advocate productions.",
   "sections": [
     {
+      "heading": "Purpose",
+      "type": "section",
+      "body": "Authorize Spotlight Advocate to record and use a talent's likeness."
+    },
+    {
+      "heading": "Scope",
+      "type": "section",
+      "body": "Applies to individuals appearing on camera in Spotlight Advocate productions."
+    },
+    {
       "heading": "Consent",
       "body": "Talent consents to being photographed and recorded."
     },
@@ -23,6 +33,12 @@
       "date": "2026-07-21",
       "author": "Spotlight Advocate",
       "notes": "Initial draft."
+    },
+    {
+      "version": "1.0",
+      "date": "2026-07-22",
+      "author": "Spotlight Advocate",
+      "notes": "Assembled Purpose/Scope as leading body components (standard order)."
     }
   ]
 }

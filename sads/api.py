@@ -13,6 +13,7 @@ from .ai import build_ai_prompt
 from .generate import generate, pdf_backends_available
 from .library import (
     CATEGORIES,
+    PRIMARY_CATEGORIES,
     list_documents,
     new_document,
     save_document_payload,
@@ -20,6 +21,8 @@ from .library import (
     update_metadata,
     validate_library,
 )
+from .governance import governance_summary, suggest_next_number
+from .clauses import ensure_default_clauses, list_clauses
 from .paths import ROOT, output_docx_dir, output_pdf_dir, template_path
 from .portal import build_manual, document_corpus_entry, search_manual
 from .rebuild import rebuild_index, rebuild_library
@@ -75,6 +78,10 @@ class MetaBody(BaseModel):
 class SectionBody(BaseModel):
     heading: str
     body: str
+    type: str = "section"
+    rows: Optional[list[list[str]]] = None
+    src: str = ""
+    alt: str = ""
 
 
 class RevisionBody(BaseModel):
@@ -133,15 +140,43 @@ def status() -> dict[str, Any]:
         tmpl_error = str(exc)
 
     docs = list_documents()
+    gov = governance_summary()
     return {
         "template": tmpl,
         "template_error": tmpl_error,
         "documents": docs,
         "document_count": len(docs),
         "pdf_backends": pdf_backends_available(),
-        "categories": list(CATEGORIES),
+        "categories": list(PRIMARY_CATEGORIES),
+        "all_categories": list(CATEGORIES),
+        "category_ranges": gov["category_ranges"],
+        "layout_frozen": gov["layout_frozen"],
+        "section_types": gov["section_types"],
+        "standard_section_order": gov["standard_section_order"],
         "root": str(ROOT),
     }
+
+
+@app.get("/api/governance")
+def governance() -> dict[str, Any]:
+    return governance_summary()
+
+
+@app.get("/api/numbers/next")
+def next_number(category: str) -> dict[str, str]:
+    try:
+        existing = [d["number"] for d in list_documents()]
+        number = suggest_next_number(category, existing)
+    except ValueError as exc:
+        raise _http_error(exc) from exc
+    return {"category": category, "number": number}
+
+
+@app.get("/api/clauses")
+def clauses() -> dict[str, Any]:
+    ensure_default_clauses()
+    items = list_clauses()
+    return {"count": len(items), "clauses": items}
 
 
 @app.get("/api/documents")

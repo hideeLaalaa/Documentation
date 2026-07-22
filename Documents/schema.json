@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://spotlightadvocate.local/schemas/document.json",
   "title": "Spotlight Advocate Document",
-  "description": "Phase 3 content source for SADS. Formatting never lives here — only structured content.",
+  "description": "Content source for SADS. Formatting never lives here — only structured content. Presentation is decided by the renderer.",
   "type": "object",
   "required": [
     "number",
@@ -21,7 +21,7 @@
     "number": {
       "type": "string",
       "pattern": "^SA-[0-9]{3,}$",
-      "description": "Document number, e.g. SA-100"
+      "description": "Document number within the category band, e.g. SA-100 (Legal), SA-200 (Operations)"
     },
     "title": {
       "type": "string",
@@ -35,14 +35,19 @@
     "category": {
       "type": "string",
       "enum": [
-        "Corporate",
         "Legal",
         "Operations",
         "Sales",
-        "Production",
+        "Marketing",
         "HR",
+        "Technical",
+        "Finance",
+        "Administration",
+        "Corporate",
+        "Production",
         "Licensing"
-      ]
+      ],
+      "description": "Semantic purpose category. Prefer primary categories; legacy aliases map into the same number bands."
     },
     "owner": {
       "type": "string",
@@ -54,10 +59,12 @@
       "examples": ["Pending", "Approved", "Draft"]
     },
     "purpose": {
-      "type": "string"
+      "type": "string",
+      "description": "Canonical purpose; also assembled as a leading Purpose section when generating"
     },
     "scope": {
-      "type": "string"
+      "type": "string",
+      "description": "Canonical scope; also assembled as a leading Scope section when generating"
     },
     "sections": {
       "type": "array",
@@ -67,7 +74,46 @@
         "additionalProperties": false,
         "properties": {
           "heading": { "type": "string" },
-          "body": { "type": "string" }
+          "body": {
+            "type": "string",
+            "description": "May include reusable clause refs such as {{clause:liability}} or {{ Standard Confidentiality Clause }}. For tables, may contain a pipe table."
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "section",
+              "paragraph",
+              "definition",
+              "responsibilities",
+              "procedure",
+              "warning",
+              "note",
+              "tip",
+              "signature",
+              "approval",
+              "appendix",
+              "table",
+              "image"
+            ],
+            "default": "section",
+            "description": "Reusable building-block type (not a document template)"
+          },
+          "rows": {
+            "type": "array",
+            "description": "For type=table: array of rows, each an array of cell strings. First row is the header.",
+            "items": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          },
+          "src": {
+            "type": "string",
+            "description": "For type=image: path relative to project root, Output/Images/, or Components/Images/"
+          },
+          "alt": {
+            "type": "string",
+            "description": "For type=image: accessible alternative text"
+          }
         }
       }
     },
@@ -84,7 +130,14 @@
             "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
           },
           "author": { "type": "string" },
-          "notes": { "type": "string" }
+          "notes": {
+            "type": "string",
+            "description": "Structured revision description (rendered as table column)"
+          },
+          "description": {
+            "type": "string",
+            "description": "Alias for notes; normalized to notes on load"
+          }
         }
       }
     }

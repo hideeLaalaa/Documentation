@@ -119,14 +119,55 @@ export function PortalReadPage() {
         </section>
 
         <div className="mt-10 space-y-10">
-          {doc.sections.map((section, i) => (
-            <section key={i} className="animate-rise border-t border-line/80 pt-8">
-              <h2 className="font-display text-xl font-bold text-ink">{section.heading}</h2>
-              <p className="mt-3 whitespace-pre-wrap text-base leading-relaxed text-ink-soft">
-                {section.body}
-              </p>
-            </section>
-          ))}
+          {doc.sections
+            .filter((section) => {
+              const h = section.heading.trim().toLowerCase()
+              return h !== 'purpose' && h !== 'scope'
+            })
+            .map((section, i) => (
+              <section key={i} className="animate-rise border-t border-line/80 pt-8">
+                {section.heading ? (
+                  <h2 className="font-display text-xl font-bold text-ink">{section.heading}</h2>
+                ) : null}
+                {section.type === 'table' && section.rows?.length ? (
+                  <div className="mt-4 overflow-x-auto">
+                    <table className="w-full border-collapse text-left text-sm text-ink-soft">
+                      <thead>
+                        <tr>
+                          {section.rows[0].map((cell, ci) => (
+                            <th
+                              key={ci}
+                              className="border-b border-line px-3 py-2 font-semibold text-ink"
+                            >
+                              {cell}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {section.rows.slice(1).map((row, ri) => (
+                          <tr key={ri}>
+                            {row.map((cell, ci) => (
+                              <td key={ci} className="border-b border-line/70 px-3 py-2">
+                                {cell}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : null}
+                {section.type === 'image' && section.src ? (
+                  <p className="mt-3 text-sm text-ink-soft/70">Figure: {section.src}</p>
+                ) : null}
+                {section.body ? (
+                  <p className="mt-3 whitespace-pre-wrap text-base leading-relaxed text-ink-soft">
+                    {section.body}
+                  </p>
+                ) : null}
+              </section>
+            ))}
         </div>
 
         <footer className="mt-14 border-t border-line pt-6 text-xs text-ink-soft/60">
